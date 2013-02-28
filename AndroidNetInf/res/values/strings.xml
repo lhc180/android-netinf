@@ -1,0 +1,20 @@
+<resources>
+
+    <string name="app_name">NetInfService</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity">NetInfService</string>
+    
+    <string name="settings_activity_title">Settings</string>
+
+    <string name="nrs_category">Name Resolution Service</string>
+    <string name="nrs_ip_setting">Address</string>
+    <string name="nrs_port_setting">Port</string>
+    
+    <string name="bluetooth_category">Bluetooth</string>
+    <string name="bluetooth_title">Bluetooth Server</string>
+    <string name="bluetooth_summary_on">Sends files using Bluetooth</string>
+    <string name="bluetooth_summary_off">Does not send files using Bluetooth</string>
+    <string name="database_category">Database</string>
+    <string name="clear_database_title">Clear</string>
+
+</resources>

@@ -1,0 +1,10 @@
+*.apk
+*.ap_
+*.dex
+*.class
+*.*~
+
+AndroidNetInf/bin/
+AndroidNetInf/gen/
+AndroidNetInf/local.properties
+
