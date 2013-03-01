@@ -20,7 +20,6 @@ import org.json.JSONObject;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.netinf.common.Ndo;
 import android.os.Environment;
 import android.util.Log;
 
@@ -42,14 +41,14 @@ public class BluetoothCommon {
         BluetoothSocket socket = null;
         // Try one UUID at a time, a few times each until one connects
         for (UUID uuid : uuids) {
-            for (int attempt = 0; attempt < attemptsPerUuid; attempt++) {
+            for (int attempt = 1; attempt <= attemptsPerUuid; attempt++) {
                 try {
-                    Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " trying to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + ")");
+                    Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " trying to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + attemptsPerUuid + ")");
                     socket = device.createRfcommSocketToServiceRecord(uuid);
                     BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
                     socket.connect();
                 } catch (IOException e) {
-                    Log.w(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + ")");
+                    Log.w(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + attemptsPerUuid + ")");
                     continue;
                 }
                 break;
@@ -61,6 +60,7 @@ public class BluetoothCommon {
         if (!socket.isConnected()) {
             throw new IOException(BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName());
         }
+        Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " connected to " + socket.getRemoteDevice().getName());
         return socket;
     }
 
@@ -98,8 +98,6 @@ public class BluetoothCommon {
     }
 
     private static byte[] read(DataInputStream bluetoothIn) throws IOException {
-        Log.v(TAG, "read()");
-
         // Read appropriate part from the Bluetooth stream
         int length = bluetoothIn.readInt();
         byte[] buffer = new byte[length];
@@ -108,12 +106,14 @@ public class BluetoothCommon {
     }
 
     public static JSONObject readJson(DataInputStream bluetoothIn) throws IOException, JSONException {
+        Log.v(TAG, "readJson()");
         byte[] buffer = read(bluetoothIn);
         String json = new String(buffer, "UTF-8");
         return new JSONObject(json);
     }
 
-    public static byte[] readFile(Ndo ndo, DataInputStream bluetoothIn) throws IOException {
+    public static byte[] readFile(DataInputStream bluetoothIn) throws IOException {
+        Log.v(TAG, "readFile()");
         // TODO Don't read entire file into memory
         return read(bluetoothIn);
     }

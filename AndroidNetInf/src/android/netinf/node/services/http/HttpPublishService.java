@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -30,11 +29,6 @@ public class HttpPublishService implements PublishService {
     public static final String TAG = "HttpPublishService";
 
     public static final int TIMEOUT = 2000;
-
-    @Override
-    public boolean isLocal() {
-        return false;
-    }
 
     @Override
     public NetInfStatus publish(Publish publish) {
@@ -85,7 +79,7 @@ public class HttpPublishService implements PublishService {
         StringBody uri = new StringBody(ndo.getCanonicalUri());
         multipart.addPart("URI", uri);
 
-        StringBody msgid = new StringBody(RandomStringUtils.randomAlphanumeric(20));
+        StringBody msgid = new StringBody(publish.getMessageId());
         multipart.addPart("msgid", msgid);
 
         int i = 1;
@@ -101,7 +95,7 @@ public class HttpPublishService implements PublishService {
         if (publish.isFullPut()) {
             StringBody fullput = new StringBody("true");
             multipart.addPart("fullPut", fullput);
-            FileBody octets = new FileBody(ndo.getCache());
+            FileBody octets = new FileBody(ndo.getOctets());
             multipart.addPart("octets", octets);
         }
 

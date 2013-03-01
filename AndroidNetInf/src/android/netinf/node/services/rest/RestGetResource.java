@@ -8,18 +8,17 @@ import org.json.JSONObject;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
 import org.restlet.representation.StringRepresentation;
-import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
-import android.netinf.node.Node;
+import android.netinf.node.get.Get;
 import android.util.Log;
 
 public class RestGetResource extends ServerResource {
 
     public static final String TAG = "RestGetResource";
 
-    @Get
+    @org.restlet.resource.Get
     public Representation handleGet() {
         Log.i(TAG, "REST API received GET");
 
@@ -40,9 +39,10 @@ public class RestGetResource extends ServerResource {
         String algorithm = query.get(RestCommon.ALGORITHM);
         String hash = query.get(RestCommon.HASH);
         Ndo ndo = new Ndo(algorithm, hash);
+        Get get = new Get(RestApi.getInstance(), ndo);
 
         // Get
-        Ndo result = Node.getInstance().get(ndo);
+        Ndo result = get.execute();
         if (result == null || !result.isCached()) {
             setStatus(Status.SUCCESS_NO_CONTENT);
             return null;
@@ -51,7 +51,7 @@ public class RestGetResource extends ServerResource {
         try {
 
             JSONObject json = new JSONObject();
-            json.put(RestCommon.PATH, result.getCache().getCanonicalPath());
+            json.put(RestCommon.PATH, result.getOctets().getCanonicalPath());
             json.put(RestCommon.META, result.getMetadata().toString());
 
             setStatus(Status.SUCCESS_OK);

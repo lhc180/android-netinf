@@ -8,6 +8,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.json.JSONObject;
 
 import android.app.Activity;
@@ -47,6 +48,7 @@ public class NetInfActivity extends Activity {
         try {
 
             ndo = new Ndo("sha-256", hash(getFile1()));
+            ndo.setOctets(getFile1());
             ndo.addLocator(Locator.fromBluetooth("11:22:33:44"));
             JSONObject meta = new JSONObject();
             meta.put("hello", "world");
@@ -68,21 +70,16 @@ public class NetInfActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                try {
-                    Publish publish = new Publish(getNdo1());
-                    publish.setOctets(getFile1());
-                    publish.execute();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                Publish publish = new Publish(null, RandomStringUtils.randomAlphanumeric(20), getNdo1());
+                publish.setFullPut(true);
+                publish.execute();
             }
         }).start();
 
     }
 
     public void debugClearDatabase(View view) {
-        Log.d(TAG, "debugPublish()");
+        Log.d(TAG, "debugClearDatabase()");
 
         DatabaseService db = new DatabaseService();
         db.clearDatabase();

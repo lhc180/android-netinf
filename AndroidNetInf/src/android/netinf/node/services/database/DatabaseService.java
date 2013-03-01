@@ -13,6 +13,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.netinf.NetInfApplication;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
+import android.netinf.node.get.Get;
 import android.netinf.node.get.GetService;
 import android.netinf.node.publish.Publish;
 import android.netinf.node.publish.PublishService;
@@ -41,11 +42,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     @Override
-    public boolean isLocal() {
-        return true;
-    }
-
-    @Override
     public NetInfStatus publish(Publish publish) {
         Log.v(TAG, "publish()");
         Ndo ndo = publish.getNdo();
@@ -61,9 +57,9 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     @Override
-    public Ndo get(Ndo ndo) {
+    public Ndo get(Get get) {
         Log.v(TAG, "get()");
-        byte[] blob = getBlob(ndo);
+        byte[] blob = getBlob(get.getNdo());
         Ndo result = null;
         if (blob != null ) {
             result = (Ndo) SerializationUtils.deserialize(blob);
@@ -72,7 +68,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     @Override
-    public void search(Search search, Set<String> tokens) {
+    public void search(Search search) {
         Log.v(TAG, "search()");
         String[] columns = {COLUMN_NDO};
         SQLiteDatabase db = getReadableDatabase();
@@ -83,7 +79,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
         while (!cursor.isAfterLast()) {
             byte[] blob = cursor.getBlob(cursor.getColumnIndex(COLUMN_NDO));
             Ndo ndo = (Ndo) SerializationUtils.deserialize(blob);
-            if (ndo.matches(tokens)) {
+            if (ndo.matches(search.getTokens())) {
                 results.add(ndo);
             }
             cursor.moveToNext();

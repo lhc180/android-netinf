@@ -14,9 +14,12 @@ public class RestApi implements Api {
 
     public static final String TAG = "RestApi";
 
+    /** Singleton Instance. */
+    private static final RestApi INSTANCE = new RestApi();
+
     private Component mComponent = new Component();
 
-    public RestApi() {
+    private RestApi() {
         // TODO get settings in a nice way
         int port = 8080;
         mComponent.getServers().add(Protocol.HTTP, port);
@@ -26,8 +29,13 @@ public class RestApi implements Api {
         disableLogging();
     }
 
+    public static RestApi getInstance() {
+        return INSTANCE;
+    }
+
     @Override
     public void start() {
+        Log.v(TAG, "start()");
         try {
             mComponent.start();
         } catch (Exception e) {
@@ -37,6 +45,7 @@ public class RestApi implements Api {
 
     @Override
     public void stop() {
+        Log.v(TAG, "stop()");
         try {
             mComponent.stop();
         } catch (Exception e) {

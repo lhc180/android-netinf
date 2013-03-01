@@ -14,7 +14,7 @@ import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
-import android.netinf.node.Node;
+import android.netinf.node.search.Search;
 import android.util.Log;
 
 public class RestSearchResource extends ServerResource {
@@ -40,7 +40,8 @@ public class RestSearchResource extends ServerResource {
         for (String token : query.get(RestCommon.TOKENS).split(" ")) {
             tokens.add(token);
         }
-        Set<Ndo> ndos = Node.getInstance().search(tokens, TIMEOUT);
+        Search search = new Search(RestApi.getInstance(), tokens, TIMEOUT);
+        Set<Ndo> ndos = search.execute();
 
         try {
             JSONObject json = new JSONObject();

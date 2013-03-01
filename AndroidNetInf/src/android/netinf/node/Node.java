@@ -6,11 +6,13 @@ import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 import android.netinf.node.api.Api;
 import android.netinf.node.api.ApiController;
+import android.netinf.node.get.Get;
 import android.netinf.node.get.GetController;
 import android.netinf.node.get.GetService;
 import android.netinf.node.publish.Publish;
 import android.netinf.node.publish.PublishController;
 import android.netinf.node.publish.PublishService;
+import android.netinf.node.search.Search;
 import android.netinf.node.search.SearchController;
 import android.netinf.node.search.SearchService;
 import android.util.Log;
@@ -45,12 +47,12 @@ public class Node {
         return mPublishController.publish(publish);
     }
 
-    public Ndo get(Ndo ndo) {
-        return mGetController.get(ndo);
+    public Ndo get(Get get) {
+        return mGetController.get(get);
     }
 
-    public Set<Ndo> search(Set<String> tokens, long timeout) {
-        return mSearchController.search(tokens, timeout);
+    public Set<Ndo> search(Search search) {
+        return mSearchController.search(search);
     }
 
     public void setApiController(ApiController apiController) {
@@ -69,16 +71,19 @@ public class Node {
         mSearchController = searchController;
     }
 
-    public void addPublishService(PublishService publishService) {
-        mPublishController.addPublishService(publishService);
+    public void registerPublishService(Api source, PublishService destination) {
+        mApiController.addApi(source);
+        mPublishController.registerPublishService(source, destination);
     }
 
-    public void addGetService(GetService getService) {
-        mGetController.addGetService(getService);
+    public void registerGetService(Api source, GetService destination) {
+        mApiController.addApi(source);
+        mGetController.registerGetService(source, destination);
     }
 
-    public void addSearchService(SearchService searchService) {
-        mSearchController.addSearchService(searchService);
+    public void registerSearchService(Api source, SearchService destination) {
+        mApiController.addApi(source);
+        mSearchController.registerSearchService(source, destination);
     }
 
     public void addApi(Api api) {

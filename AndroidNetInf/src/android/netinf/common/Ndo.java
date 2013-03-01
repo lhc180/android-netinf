@@ -6,6 +6,8 @@ import java.io.Serializable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
+
 import android.os.Environment;
 
 
@@ -22,50 +24,7 @@ public class Ndo implements Serializable {
     private String mHash;
     private LinkedHashSet<Locator> mLocators;
     private Metadata mMetadata;
-    /** Path of local cache file. */
-    private File mCache;
-    /** Should send binary in publishes. */
-    private boolean mFullPut;
-
-    public static class Builder {
-
-        private String mAuthority = "";
-        private String mAlgorithm;
-        private String mHash;
-        private Set<Locator> mLocators = new LinkedHashSet<Locator>();
-        private Metadata mMetadata = new Metadata();
-        private boolean mFullPut = false;
-
-        public Builder(String algorithm, String hash) {
-            mAlgorithm = algorithm;
-            mHash = hash;
-        }
-
-        public Builder authority(String authority) { mAuthority = authority; return this; }
-        public Builder locators(Set<Locator> locators) { mLocators = locators; return this; }
-        public Builder metadata(Metadata metadata) { mMetadata = metadata; return this; }
-        public Builder fullPut(boolean fullPut) { mFullPut = fullPut; return this; }
-
-        public Ndo build() {
-            return new Ndo(this);
-        }
-
-    }
-
-    /**
-     * Creates a new {@link Ndo} given a {@link Builder}.
-     * @param builder
-     *     The {@link Builder}
-     */
-    private Ndo(Builder builder) {
-        mAuthority = builder.mAuthority;
-        mAlgorithm = builder.mAlgorithm;
-        mHash = builder.mHash;
-        mLocators = new LinkedHashSet<Locator>(builder.mLocators); // A Serializable set
-        mMetadata = builder.mMetadata;
-        mCache = new File(CACHE_FOLDER, builder.mHash);
-        mFullPut = builder.mFullPut;
-    }
+    private File mOctets;
 
     public Ndo(String algorithm, String hash) {
         mAuthority = "";
@@ -73,8 +32,7 @@ public class Ndo implements Serializable {
         mHash = hash;
         mLocators = new LinkedHashSet<Locator>();
         mMetadata = new Metadata();
-        mCache = new File(CACHE_FOLDER, hash);
-        mFullPut = false;
+        mOctets = new File(CACHE_FOLDER, hash);
     }
 
     public Ndo(Ndo ndo) {
@@ -83,8 +41,7 @@ public class Ndo implements Serializable {
         mHash = ndo.mHash;
         mLocators = new LinkedHashSet<Locator>(ndo.mLocators);
         mMetadata = new Metadata(ndo.mMetadata);
-        mCache = ndo.mCache;
-        mFullPut = ndo.mFullPut;
+        mOctets = ndo.mOctets;
     }
 
     /**
@@ -109,13 +66,21 @@ public class Ndo implements Serializable {
         mMetadata.merge(metadata);
     }
 
+    public void setOctets(File file) throws IOException {
+        FileUtils.copyFile(file, mOctets);
+    }
+
+    public void setOctets(byte[] octets) throws IOException {
+        FileUtils.writeByteArrayToFile(mOctets, octets);
+    }
+
     /**
      * Checks if the {@link Ndo} is cached locally.
      * @return
      *     True if cached locally, otherwise false
      */
     public boolean isCached() {
-        return mCache.exists();
+        return mOctets.exists();
     }
 
     /**
@@ -167,8 +132,8 @@ public class Ndo implements Serializable {
         return mMetadata;
     }
 
-    public File getCache() {
-        return mCache;
+    public File getOctets() {
+        return mOctets;
     }
 
     public void setAuthority(String authority) {
@@ -195,7 +160,7 @@ public class Ndo implements Serializable {
         builder.append(", cache=");
         if (isCached()) {
             try {
-                builder.append(mCache.getCanonicalPath());
+                builder.append(mOctets.getCanonicalPath());
             } catch (IOException e) {
                 builder.append("ERROR");
             }

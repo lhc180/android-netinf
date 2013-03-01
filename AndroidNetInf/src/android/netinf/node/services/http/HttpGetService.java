@@ -32,6 +32,7 @@ import android.netinf.common.Locator;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
+import android.netinf.node.get.Get;
 import android.netinf.node.get.GetService;
 import android.util.Log;
 
@@ -42,12 +43,7 @@ public class HttpGetService implements GetService {
     public static final int TIMEOUT = 2000;
 
     @Override
-    public boolean isLocal() {
-        return false;
-    }
-
-    @Override
-    public Ndo get(Ndo ndo) {
+    public Ndo get(Get get) {
         Log.v(TAG, "get()");
 
         // HTTP Client
@@ -60,8 +56,8 @@ public class HttpGetService implements GetService {
         Ndo result = null;
         for (String peer : HttpCommon.PEERS) {
             try {
-                HttpResponse response = client.execute(createGet(peer, ndo));
-                result = parse(ndo, response);
+                HttpResponse response = client.execute(createGet(peer, get));
+                result = parse(get.getNdo(), response);
 //                if (result != null) {
 //                    break;
 //                }
@@ -79,7 +75,7 @@ public class HttpGetService implements GetService {
         return result;
     }
 
-    private HttpPost createGet(String peer, Ndo ndo) throws UnsupportedEncodingException {
+    private HttpPost createGet(String peer, Get get) throws UnsupportedEncodingException {
         Log.v(TAG, "createGet()");
 
         HttpPost post = new HttpPost(peer + "/netinfproto/get");
@@ -87,7 +83,7 @@ public class HttpGetService implements GetService {
 
         StringBuilder builder = new StringBuilder();
         builder.append("URI=");
-        builder.append(ndo.getCanonicalUri());
+        builder.append(get.getNdo().getCanonicalUri());
         builder.append("&msgid=");
         builder.append(RandomStringUtils.randomAlphanumeric(20));
 
@@ -183,7 +179,7 @@ public class HttpGetService implements GetService {
         try {
 
             jsonStream = new ByteArrayOutputStream();
-            binaryStream = new FileOutputStream(result.getCache());
+            binaryStream = new FileOutputStream(result.getOctets());
 
             // TODO Is the order of the fields always the same?
             multipartStream.readHeaders();
@@ -234,7 +230,7 @@ public class HttpGetService implements GetService {
         OutputStream out = null;
         try {
             in = HttpCommon.getContent(HttpCommon.getEntity(response));
-            out = new FileOutputStream(ndo.getCache());
+            out = new FileOutputStream(ndo.getOctets());
             IOUtils.copy(in, out);
             in.close();
             out.close();

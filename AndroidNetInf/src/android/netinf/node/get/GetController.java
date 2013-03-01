@@ -1,35 +1,44 @@
 package android.netinf.node.get;
 
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import android.netinf.common.Ndo;
+import android.netinf.node.api.Api;
 import android.util.Log;
 
 public class GetController {
 
     public static final String TAG = "GetController";
 
-    private Set<GetService> mGetServices = new LinkedHashSet<GetService>();
+    Map<Api, Set<GetService>> mGetServices;
 
-    public void addGetService(GetService getService) {
-        mGetServices.add(getService);
+    public GetController() {
+        mGetServices = new HashMap<Api, Set<GetService>>();
     }
 
-    public Ndo get(Ndo ndo) {
-        Ndo result = null;
-        for (GetService getService : mGetServices) {
-            result = getService.get(ndo);
-//            if (result != null) {
-//                break;
-//            }
+    public void registerGetService(Api source, GetService destination) {
+        if (!mGetServices.containsKey(source)) {
+            mGetServices.put(source, new LinkedHashSet<GetService>());
         }
-        if (result == null) {
-            Log.i(TAG, "GET did not produce an NDO");
-        } else {
-            Log.i(TAG, "GET produced an NDO");
+        mGetServices.get(source).add(destination);
+    }
+
+    public Ndo get(Get get) {
+        Log.v(TAG, "get()");
+
+        for (GetService getService : mGetServices.get(get.getSource())) {
+            Ndo ndo = getService.get(get);
+            if (ndo != null) {
+                Log.i(TAG, "GET produced an NDO");
+                return ndo;
+            }
         }
-        return result;
+
+        Log.i(TAG, "GET did not produce an NDO");
+        return null;
     }
 
 }

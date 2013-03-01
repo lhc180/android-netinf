@@ -15,6 +15,7 @@ import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfStatus;
+import android.netinf.common.NetInfUtils;
 import android.netinf.node.publish.Publish;
 import android.util.Log;
 
@@ -60,19 +61,21 @@ public class RestPublishResource extends ServerResource {
         }
 
         // Create Publish
-        Publish publish = new Publish(ndo);
+        Publish publish = new Publish(RestApi.getInstance(), NetInfUtils.newMessageId(), ndo);
 
         // Full Put
         if (query.containsKey(RestCommon.PATH)) {
             try {
-                publish.setOctets(new File(query.get(RestCommon.PATH)));
+                ndo.setOctets(new File(query.get(RestCommon.PATH)));
+                publish.setFullPut(true);
             } catch (IOException e) {
-                Log.e(TAG, "Failed to add octets to publish", e);
+                Log.e(TAG, "Failed to set NDO octets", e);
             }
         }
 
         // Publish
-        NetInfStatus status = publish.execute();
+        publish.execute();
+        NetInfStatus status = publish.getResult();
         if (status != NetInfStatus.OK) {
             setStatus(Status.SERVER_ERROR_INTERNAL);
             return null;

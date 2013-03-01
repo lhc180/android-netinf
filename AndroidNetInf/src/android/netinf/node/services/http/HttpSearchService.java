@@ -38,12 +38,7 @@ public class HttpSearchService implements SearchService {
     public static final int TIMEOUT = 1000;
 
     @Override
-    public boolean isLocal() {
-        return false;
-    }
-
-    @Override
-    public void search(Search search, Set<String> tokens) {
+    public void search(Search search) {
         Log.v(TAG, "search()");
 
         // HTTP Client
@@ -55,7 +50,7 @@ public class HttpSearchService implements SearchService {
         Set<Ndo> ndos = new LinkedHashSet<Ndo>();
         for (String peer : HttpCommon.PEERS) {
             try {
-                HttpResponse response = client.execute(createSearch(peer, tokens));
+                HttpResponse response = client.execute(createSearch(peer, search));
                 int status = response.getStatusLine().getStatusCode();
                 if (status == HttpStatus.SC_OK) {
                     ndos.addAll(parse(response));
@@ -76,7 +71,7 @@ public class HttpSearchService implements SearchService {
 
     }
 
-    private HttpPost createSearch(String peer, Set<String> tokens) throws UnsupportedEncodingException {
+    private HttpPost createSearch(String peer, Search search) throws UnsupportedEncodingException {
         Log.v(TAG, "createSearch()");
 
         HttpPost post = new HttpPost(peer + "/netinfproto/search");
@@ -86,7 +81,7 @@ public class HttpSearchService implements SearchService {
         builder.append("?msgid=");
         builder.append(RandomStringUtils.randomAlphanumeric(20));
         builder.append("&tokens=");
-        builder.append(createTokens(tokens));
+        builder.append(createTokens(search.getTokens()));
 
         HttpEntity entity = new StringEntity(builder.toString(), "UTF-8");
         post.setEntity(entity);
@@ -133,7 +128,10 @@ public class HttpSearchService implements SearchService {
                 String hash = getHash(result);
                 String metadata = getMetadata(result);
 
-                ndos.add(new Ndo.Builder(algorithm, hash).metadata(new Metadata(metadata)).build());
+                Ndo ndo = new Ndo(algorithm, hash);
+                ndo.addMetadata(new Metadata(metadata));
+                ndos.add(ndo);
+
             } catch (JSONException e) {
                 Log.w(TAG, "Failed to parse result", e);
             }

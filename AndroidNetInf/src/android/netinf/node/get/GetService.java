@@ -1,10 +1,9 @@
 package android.netinf.node.get;
 
 import android.netinf.common.Ndo;
-import android.netinf.common.NetInfService;
 
-public interface GetService extends NetInfService {
+public interface GetService {
 
-    public Ndo get(Ndo ndo);
+    public Ndo get(Get get);
 
 }

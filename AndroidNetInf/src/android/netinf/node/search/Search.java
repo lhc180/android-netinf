@@ -6,21 +6,45 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import android.netinf.common.Ndo;
+import android.netinf.node.Node;
+import android.netinf.node.api.Api;
 
 
 public class Search {
 
+    private Api mSource;
+    private Set<String> mTokens;
+    private long mTimeout;
     private Set<Ndo> mResults;
-    private CountDownLatch mRemaining;
+    private CountDownLatch mPending;
 
-    public Search(SearchController searchController) {
+    public Search(Api source, Set<String> tokens, long timeout) {
+        mSource = source;
+        mTokens = tokens;
+        mTimeout = timeout;
         mResults = new HashSet<Ndo>();
-        mRemaining = new CountDownLatch(searchController.searchServiceCount());
+        mPending = new CountDownLatch(0);
     }
 
-    public void await(long timeout) {
+    public Api getSource() {
+        return mSource;
+    }
+
+    public Set<String> getTokens() {
+        return mTokens;
+    }
+
+    public Set<Ndo> getResults() {
+        return mResults;
+    }
+
+    public void setPending(int searches) {
+        mPending = new CountDownLatch(searches);
+    }
+
+    public void await() {
         try {
-            mRemaining.await(timeout, TimeUnit.MILLISECONDS);
+            mPending.await(mTimeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
 
         }
@@ -28,11 +52,11 @@ public class Search {
 
     public synchronized void submitResults(Set<Ndo> results) {
         mResults.addAll(results);
-        mRemaining.countDown();
+        mPending.countDown();
     }
 
-    public Set<Ndo> getResults() {
-        return mResults;
+    public Set<Ndo> execute() {
+        return Node.getInstance().search(this);
     }
 
 }

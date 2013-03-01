@@ -1,58 +1,60 @@
 package android.netinf.node.publish;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.apache.commons.io.FileUtils;
-
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 import android.netinf.node.Node;
+import android.netinf.node.api.Api;
 
 public class Publish {
 
     // Request
+    private Api mSource;
+    private String mId;
     private Ndo mNdo;
-    private byte[] mOctets;
-    private boolean mLocal;
+    private boolean mFullPut;
 //    private Date mReceived;
 
     // Result
-//    private NetInfStatus mStatus;
+    private NetInfStatus mStatus;
 
 
-    public Publish(Ndo ndo) {
+    public Publish(Api source, String id, Ndo ndo) {
+        if (ndo == null) {
+            throw new NullPointerException("ndo must not be null");
+        }
+        mSource = source;
+        mId = id;
         mNdo = ndo;
-        mOctets = null;
-        mLocal = false;
+        mFullPut = false;
+        mStatus = NetInfStatus.TIMEOUT;
+    }
+
+    public Api getSource() {
+        return mSource;
+    }
+
+    public String getMessageId() {
+        return mId;
     }
 
     public Ndo getNdo() {
         return mNdo;
     }
 
-    public void setOctets(File file) throws IOException {
-        mOctets = FileUtils.readFileToByteArray(file);
-    }
-
-    public void setOctets(byte[] octets) {
-        mOctets = octets;
+    public void setFullPut(boolean isFullPut) {
+        mFullPut = isFullPut;
     }
 
     public boolean isFullPut() {
-        return mOctets != null;
+        return mFullPut;
     }
 
-    public void setLocal(boolean local) {
-        mLocal = local;
+    public void execute() {
+        mStatus = Node.getInstance().publish(this);
     }
 
-    public boolean isLocal() {
-        return mLocal;
-    }
-
-    public NetInfStatus execute() {
-        return Node.getInstance().publish(this);
+    public NetInfStatus getResult() {
+        return mStatus;
     }
 
 }

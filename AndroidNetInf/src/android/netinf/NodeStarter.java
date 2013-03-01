@@ -9,7 +9,10 @@ import android.netinf.node.search.SearchController;
 import android.netinf.node.services.bluetooth.BluetoothApi;
 import android.netinf.node.services.bluetooth.BluetoothPublish;
 import android.netinf.node.services.database.DatabaseService;
+import android.netinf.node.services.http.HttpGetService;
 import android.netinf.node.services.http.HttpPublishService;
+import android.netinf.node.services.http.HttpSearchService;
+import android.netinf.node.services.rest.RestApi;
 
 public class NodeStarter implements Runnable {
 
@@ -31,24 +34,35 @@ public class NodeStarter implements Runnable {
         node.setGetController(new GetController());
         node.setSearchController(new SearchController());
 
-        // Add DatabaseService
+        // Create Api(s) and Service(s)
+        // REST
+        RestApi restApi = RestApi.getInstance();
+        // Database
         DatabaseService db = new DatabaseService();
-        node.addPublishService(db);
-        node.addGetService(db);
-        node.addSearchService(db);
-
-        // Add RestApi
-//        node.addApi(new RestApi());
-
-        // Add HTTP CL
-        node.addPublishService(new HttpPublishService());
-//        node.addGetService(new HttpGetService());
-//        node.addSearchService(new HttpSearchService());
-
-        // Add Bluetooth CL
+        // HTTP CL
+        HttpPublishService httpPublish = new HttpPublishService();
+        HttpGetService httpGet = new HttpGetService();
+        HttpSearchService httpSearch = new HttpSearchService();
+        // Bluetooth CL
         BluetoothApi bluetoothApi = new BluetoothApi(mContext);
-        node.addApi(bluetoothApi);
-        node.addPublishService(new BluetoothPublish(bluetoothApi));
+        BluetoothPublish bluetoothPublish =  new BluetoothPublish(bluetoothApi);
+
+        // Link source Api(s) and destination Service(s)
+        // Requests received on the REST Api should use...
+//        node.registerPublishService(restApi, db);
+//        node.registerPublishService(restApi, httpPublish);
+//        node.registerPublishService(restApi, bluetoothPublish);
+//        node.registerGetService(restApi, db);
+//        node.registerGetService(restApi, httpGet);
+//        node.registerSearchService(restApi, db);
+//        node.registerSearchService(restApi, httpSearch);
+        // Requests received on the Bluetooth Api should use...
+        node.registerPublishService(bluetoothApi, db);
+        node.registerGetService(bluetoothApi, db);
+        node.registerSearchService(bluetoothApi, db);
+
+        // Debug
+        node.registerPublishService(null, bluetoothPublish);
 
         // Start Node
         node.start();

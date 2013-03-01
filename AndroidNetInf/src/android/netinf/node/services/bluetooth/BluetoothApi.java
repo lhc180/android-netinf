@@ -12,14 +12,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.netinf.node.api.Api;
+import android.util.Log;
 
 public class BluetoothApi implements Api {
 
-    Stack<UUID> mAvailableUuids;
-    Set<UUID> mAllUuids;
-    ExecutorService mServerExecutor;
-    ScheduledExecutorService mDiscoveryExecutor;
-    BluetoothDiscovery mBluetoothDiscovery;
+    public static final String TAG = "BluetoothApi";
+
+    private Stack<UUID> mAvailableUuids;
+    private Set<UUID> mAllUuids;
+    private ExecutorService mServerExecutor;
+    private ScheduledExecutorService mDiscoveryExecutor;
+    private BluetoothDiscovery mBluetoothDiscovery;
 
     public BluetoothApi(Context context) {
 
@@ -59,15 +62,18 @@ public class BluetoothApi implements Api {
 
     @Override
     public void start() {
+        Log.v(TAG, "start()");
+        // TODO enable bluetooth discovery when relevant
 //        mDiscoveryExecutor.scheduleWithFixedDelay(mBluetoothDiscovery, 0, BluetoothDiscovery.DELAY, TimeUnit.MILLISECONDS);
         for (int i = 0; i < mAllUuids.size(); i++) {
-            // TODO make certain UUIDs are returned if thread crashes
+            // TODO make certain UUIDs are returned if thread crashes?
             mServerExecutor.execute(new BluetoothServer(this));
         }
     }
 
     @Override
     public void stop() {
+        Log.v(TAG, "stop()");
         // TODO clean up stuff properly
         mDiscoveryExecutor.shutdown();
         mServerExecutor.shutdown();

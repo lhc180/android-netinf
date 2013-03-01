@@ -3,6 +3,7 @@ package android.netinf.common;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -11,7 +12,7 @@ import android.util.Log;
 
 public class NetInfUtils {
 
-    public static final String TAG = "NdoUtils";
+    public static final String TAG = "NetInfUtils";
 
     public static String getAuthority(String uri) throws NetInfException {
         Log.v(TAG, "getAuthority()");
@@ -46,7 +47,13 @@ public class NetInfUtils {
         }
     }
 
+    public static String newMessageId() {
+        // TODO good enough?
+        return RandomStringUtils.randomAlphanumeric(20);
+    }
+
     public static Ndo toNdo(JSONObject jo) throws NetInfException {
+        Log.v(TAG, "toNdo()");
 
         // Required
         // Algorithm and hash
@@ -83,7 +90,7 @@ public class NetInfUtils {
         }
         // Metadata
         try {
-            ndo.addMetadata(new Metadata(jo.getJSONObject("metadata")));
+            ndo.addMetadata(new Metadata(jo.getJSONObject("ext").getJSONObject("meta")));
         } catch (JSONException e) {
             Log.w(TAG, "Failed to parse metadata, defaulting to empty");
         }

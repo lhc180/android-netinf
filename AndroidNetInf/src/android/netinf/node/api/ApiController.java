@@ -18,7 +18,9 @@ public class ApiController {
     public void start() {
         Log.v(TAG, "start()");
         for (Api api : mApis) {
-            api.start();
+            if (api != null) { // TODO Null API used to direct debug requests
+                api.start();
+            }
         }
     }
 
