@@ -22,8 +22,6 @@ public class BluetoothPublish implements PublishService {
 
     public static final String TAG = "BluetoothPublish";
 
-    public static final int ATTEMPTS_PER_UUID = 2;
-
     private BluetoothApi mApi;
 
     public BluetoothPublish(BluetoothApi api) {
@@ -33,6 +31,7 @@ public class BluetoothPublish implements PublishService {
     @Override
     public NetInfStatus publish(Publish publish) {
             Log.v(TAG, "publish()");
+            Log.i(TAG, "Bluetooth CL received PUBLISH: " + publish);
 
             NetInfStatus result = NetInfStatus.I_FAILED;
 
@@ -41,30 +40,31 @@ public class BluetoothPublish implements PublishService {
             try {
                 jo = createPublishJson(publish);
             } catch (JSONException e) {
-                Log.e(TAG, "Failed to create JSON representation of Publish", e);
+                Log.wtf(TAG, "Failed to create JSON representation of Publish", e);
                 return NetInfStatus.I_FAILED;
             }
 
+            // Publish to all relevant devices
             for (BluetoothDevice device : mApi.getBluetoothDevices()) {
 
                 BluetoothSocket socket = null;
-                DataInputStream bluetoothIn = null;
-                DataOutputStream bluetoothOut = null;
+                DataInputStream in = null;
+                DataOutputStream out = null;
                 try {
 
                     // Connect
-                    socket = BluetoothCommon.connect(device, mApi.getUuids(), ATTEMPTS_PER_UUID);
-                    bluetoothIn = new DataInputStream(socket.getInputStream());
-                    bluetoothOut = new DataOutputStream(socket.getOutputStream());
+                    socket = BluetoothCommon.connect(device);
+                    in = new DataInputStream(socket.getInputStream());
+                    out = new DataOutputStream(socket.getOutputStream());
 
                     // Send
-                    BluetoothCommon.write(jo, bluetoothOut);
+                    BluetoothCommon.write(jo, out);
                     if (publish.isFullPut()) {
-                        BluetoothCommon.write(publish.getNdo().getOctets(), bluetoothOut);
+                        BluetoothCommon.write(publish.getNdo().getOctets(), out);
                     }
 
                     // Receive
-                    JSONObject response = BluetoothCommon.readJson(bluetoothIn);
+                    JSONObject response = BluetoothCommon.readJson(in);
                     if (response.getInt("status") == NetInfStatus.OK.getCode()) {
                         result = NetInfStatus.OK;
                         Log.i(TAG, "PUBLISH to " + device.getName() + " succeeded");
@@ -77,8 +77,8 @@ public class BluetoothPublish implements PublishService {
                 } catch (JSONException e) {
                     Log.e(TAG, "PUBLISH to " + device.getName() + " failed", e);
                 } finally {
-                    IOUtils.closeQuietly(bluetoothIn);
-                    IOUtils.closeQuietly(bluetoothOut);
+                    IOUtils.closeQuietly(in);
+                    IOUtils.closeQuietly(out);
                     IOUtils.closeQuietly(socket);
                 }
 
@@ -102,13 +102,13 @@ public class BluetoothPublish implements PublishService {
         meta.put("meta", ndo.getMetadata().toJson());
 
         jo.put("type", "publish");
-        jo.put("msgid", publish.getMessageId());
+        jo.put("msgid", publish.getId());
         jo.put("uri", ndo.getUri());
         jo.put("locators", locators);
         jo.put("ext", meta);
 
         if (publish.isFullPut()) {
-            jo.put("fullput", true);
+            jo.put("octets", true);
         }
 
         return jo;

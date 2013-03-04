@@ -11,6 +11,7 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
+import android.netinf.common.NetInfUtils;
 import android.netinf.node.get.Get;
 import android.util.Log;
 
@@ -20,7 +21,7 @@ public class RestGetResource extends ServerResource {
 
     @org.restlet.resource.Get
     public Representation handleGet() {
-        Log.i(TAG, "REST API received GET");
+        Log.v(TAG, "handleGet()");
 
         // Extract
         Map<String, String> query = getQuery().getValuesMap();
@@ -39,7 +40,9 @@ public class RestGetResource extends ServerResource {
         String algorithm = query.get(RestCommon.ALGORITHM);
         String hash = query.get(RestCommon.HASH);
         Ndo ndo = new Ndo(algorithm, hash);
-        Get get = new Get(RestApi.getInstance(), ndo);
+        Get get = new Get(RestApi.getInstance(), NetInfUtils.newMessageId(), ndo);
+
+        Log.i(TAG, "REST API received GET: " + get);
 
         // Get
         Ndo result = get.execute();

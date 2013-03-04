@@ -7,6 +7,7 @@ import android.netinf.node.get.GetController;
 import android.netinf.node.publish.PublishController;
 import android.netinf.node.search.SearchController;
 import android.netinf.node.services.bluetooth.BluetoothApi;
+import android.netinf.node.services.bluetooth.BluetoothGet;
 import android.netinf.node.services.bluetooth.BluetoothPublish;
 import android.netinf.node.services.database.DatabaseService;
 import android.netinf.node.services.http.HttpGetService;
@@ -46,6 +47,7 @@ public class NodeStarter implements Runnable {
         // Bluetooth CL
         BluetoothApi bluetoothApi = new BluetoothApi(mContext);
         BluetoothPublish bluetoothPublish =  new BluetoothPublish(bluetoothApi);
+        BluetoothGet bluetoothGet =  new BluetoothGet(bluetoothApi);
 
         // Link source Api(s) and destination Service(s)
         // Requests received on the REST Api should use...
@@ -62,7 +64,8 @@ public class NodeStarter implements Runnable {
         node.registerSearchService(bluetoothApi, db);
 
         // Debug
-        node.registerPublishService(null, bluetoothPublish);
+        node.registerPublishService(null, db);
+        node.registerGetService(null, bluetoothGet);
 
         // Start Node
         node.start();

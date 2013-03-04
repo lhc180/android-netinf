@@ -7,21 +7,27 @@ import android.netinf.node.api.Api;
 public class Get {
 
     // Request
-    private Ndo mNdo;
     private Api mSource;
+    private String mId;
+    private Ndo mNdo;
 //    private Date mReceived;
 
     // Result
 //    private NetInfStatus mStatus;
 
 
-    public Get(Api source, Ndo ndo) {
+    public Get(Api source, String id, Ndo ndo) {
         mSource = source;
+        mId = id;
         mNdo = ndo;
     }
 
     public Api getSource() {
         return mSource;
+    }
+
+    public String getId() {
+        return mId;
     }
 
     public Ndo getNdo() {
@@ -32,5 +38,9 @@ public class Get {
         return Node.getInstance().get(this);
     }
 
+    @Override
+    public String toString() {
+        return mNdo.getUri();
+    }
 
 }

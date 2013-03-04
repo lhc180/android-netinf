@@ -45,6 +45,7 @@ public class HttpGetService implements GetService {
     @Override
     public Ndo get(Get get) {
         Log.v(TAG, "get()");
+        Log.i(TAG, "HTTP CL received GET: " + get);
 
         // HTTP Client
         HttpParams params = new BasicHttpParams();

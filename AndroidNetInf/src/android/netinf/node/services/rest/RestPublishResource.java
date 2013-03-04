@@ -26,7 +26,7 @@ public class RestPublishResource extends ServerResource {
     @Post
     @Put
     public Representation handlePublish() {
-        Log.i(TAG, "REST API received PUBLISH");
+        Log.v(TAG, "handlePublish()");
 
         // Extract
         Map<String, String> query = getQuery().getValuesMap();
@@ -72,6 +72,8 @@ public class RestPublishResource extends ServerResource {
                 Log.e(TAG, "Failed to set NDO octets", e);
             }
         }
+
+        Log.i(TAG, "REST API received PUBLISH: " + publish);
 
         // Publish
         publish.execute();

@@ -6,6 +6,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,20 +38,29 @@ public class BluetoothCommon {
 
     public static final String TAG = "BluetoothCommon";
 
-    public static BluetoothSocket connect(BluetoothDevice device, Set<UUID> uuids, int attemptsPerUuid) throws IOException {
+    public static final int ATTEMPTS_PER_UUID = 2;
+
+    public static final Set<UUID> UUIDS = Collections.unmodifiableSet(new HashSet<UUID>(Arrays.asList(
+            new UUID[] {UUID.fromString("111a8500-6ae2-11e2-bcfd-0800200c9a66"),
+                    UUID.fromString("111a8501-6ae2-11e2-bcfd-0800200c9a66"),
+                    UUID.fromString("111a8502-6ae2-11e2-bcfd-0800200c9a66"),
+                    UUID.fromString("111a8503-6ae2-11e2-bcfd-0800200c9a66"),
+                    UUID.fromString("111a8504-6ae2-11e2-bcfd-0800200c9a66")})));
+
+    public static BluetoothSocket connect(BluetoothDevice device) throws IOException {
         Log.v(TAG, "connect()");
 
         BluetoothSocket socket = null;
         // Try one UUID at a time, a few times each until one connects
-        for (UUID uuid : uuids) {
-            for (int attempt = 1; attempt <= attemptsPerUuid; attempt++) {
+        for (UUID uuid : UUIDS) {
+            for (int attempt = 1; attempt <= ATTEMPTS_PER_UUID; attempt++) {
                 try {
-                    Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " trying to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + attemptsPerUuid + ")");
+                    Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " trying to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
                     socket = device.createRfcommSocketToServiceRecord(uuid);
                     BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
                     socket.connect();
                 } catch (IOException e) {
-                    Log.w(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + attemptsPerUuid + ")");
+                    Log.w(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
                     continue;
                 }
                 break;
@@ -82,6 +94,7 @@ public class BluetoothCommon {
 
     public static void write(JSONObject jo, DataOutputStream bluetoothOut) throws IOException {
         Log.v(TAG, "write()");
+        Log.d(TAG, jo.toString());
         byte[] buffer = jo.toString().getBytes("UTF-8");
         bluetoothOut.writeInt(buffer.length);
         bluetoothOut.write(buffer);
@@ -109,6 +122,7 @@ public class BluetoothCommon {
         Log.v(TAG, "readJson()");
         byte[] buffer = read(bluetoothIn);
         String json = new String(buffer, "UTF-8");
+        Log.d(TAG, new JSONObject(json).toString());
         return new JSONObject(json);
     }
 

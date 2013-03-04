@@ -1,5 +1,6 @@
 package android.netinf.node.search;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -57,6 +58,11 @@ public class Search {
 
     public Set<Ndo> execute() {
         return Node.getInstance().search(this);
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.deepToString(mTokens.toArray());
     }
 
 }

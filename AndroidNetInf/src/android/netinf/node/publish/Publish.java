@@ -33,7 +33,7 @@ public class Publish {
         return mSource;
     }
 
-    public String getMessageId() {
+    public String getId() {
         return mId;
     }
 
@@ -55,6 +55,11 @@ public class Publish {
 
     public NetInfStatus getResult() {
         return mStatus;
+    }
+
+    @Override
+    public String toString() {
+        return mNdo.getUri();
     }
 
 }

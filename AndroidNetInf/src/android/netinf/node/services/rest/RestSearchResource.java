@@ -25,7 +25,7 @@ public class RestSearchResource extends ServerResource {
 
     @Get
     public Representation handleSearch() {
-        Log.i(TAG, "REST API received SEARCH");
+        Log.v(TAG, "handleSearch()");
 
         // Extract
         Map<String, String> query = getQuery().getValuesMap();
@@ -41,6 +41,7 @@ public class RestSearchResource extends ServerResource {
             tokens.add(token);
         }
         Search search = new Search(RestApi.getInstance(), tokens, TIMEOUT);
+        Log.i(TAG, "REST API received SEARCH: " + search);
         Set<Ndo> ndos = search.execute();
 
         try {

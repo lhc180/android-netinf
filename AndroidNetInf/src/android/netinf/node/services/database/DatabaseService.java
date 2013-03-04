@@ -44,6 +44,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     @Override
     public NetInfStatus publish(Publish publish) {
         Log.v(TAG, "publish()");
+        Log.i(TAG, "Database received PUBLISH: " + publish);
         Ndo ndo = publish.getNdo();
         if (!contains(ndo)) {
             insert(ndo);
@@ -59,6 +60,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     @Override
     public Ndo get(Get get) {
         Log.v(TAG, "get()");
+        Log.i(TAG, "Database received GET: " + get);
         byte[] blob = getBlob(get.getNdo());
         Ndo result = null;
         if (blob != null ) {
@@ -70,6 +72,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     @Override
     public void search(Search search) {
         Log.v(TAG, "search()");
+        Log.i(TAG, "Database received SEARCH: " + search);
         String[] columns = {COLUMN_NDO};
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_NDO, columns, null, null, null, null, null);

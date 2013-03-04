@@ -33,6 +33,7 @@ public class HttpPublishService implements PublishService {
     @Override
     public NetInfStatus publish(Publish publish) {
         Log.v(TAG, "publish()");
+        Log.i(TAG, "HTTP CL received PUBLISH: " + publish);
 
         // HTTP Client
         HttpParams params = new BasicHttpParams();
@@ -79,7 +80,7 @@ public class HttpPublishService implements PublishService {
         StringBody uri = new StringBody(ndo.getCanonicalUri());
         multipart.addPart("URI", uri);
 
-        StringBody msgid = new StringBody(publish.getMessageId());
+        StringBody msgid = new StringBody(publish.getId());
         multipart.addPart("msgid", msgid);
 
         int i = 1;

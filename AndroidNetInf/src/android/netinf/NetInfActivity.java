@@ -15,6 +15,9 @@ import android.app.Activity;
 import android.netinf.common.Locator;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
+import android.netinf.common.NetInfException;
+import android.netinf.common.NetInfUtils;
+import android.netinf.node.get.Get;
 import android.netinf.node.publish.Publish;
 import android.netinf.node.services.database.DatabaseService;
 import android.os.Bundle;
@@ -70,11 +73,29 @@ public class NetInfActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Publish publish = new Publish(null, RandomStringUtils.randomAlphanumeric(20), getNdo1());
+                Ndo ndo = new Ndo(getNdo1());
+                Publish publish = new Publish(null, RandomStringUtils.randomAlphanumeric(20), ndo);
                 publish.setFullPut(true);
                 publish.execute();
             }
         }).start();
+
+    }
+
+    public void debugGet(View view) {
+        Log.d(TAG, "debugGet()");
+
+        // Get
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Get get = new Get(null, NetInfUtils.newMessageId(), getNdo1());
+                Ndo ndo = get.execute();
+                Log.d(TAG, "result of the get: " + ndo);
+            }
+        }).start();
+
+
 
     }
 
@@ -83,6 +104,16 @@ public class NetInfActivity extends Activity {
 
         DatabaseService db = new DatabaseService();
         db.clearDatabase();
+    }
+
+    public void debugStuff(View view) {
+        Log.d(TAG, "debugStuff()");
+        try {
+            Log.d(TAG, NetInfUtils.getAlgorithm("ni://example.com/sha-256;hashityhash"));
+        } catch (NetInfException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     private static String hash(File file) {

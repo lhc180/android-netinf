@@ -27,7 +27,7 @@ public class NetInfUtils {
 
     public static String getAlgorithm(String uri) throws NetInfException {
         Log.v(TAG, "getAlgorithm()");
-        Pattern pattern = Pattern.compile("/(.*?);");
+        Pattern pattern = Pattern.compile("://.*/(.*?);");
         Matcher matcher = pattern.matcher(uri);
         if (matcher.find()) {
             return matcher.group(1);
@@ -38,7 +38,7 @@ public class NetInfUtils {
 
     public static String getHash(String uri) throws NetInfException {
         Log.v(TAG, "getHash()");
-        Pattern pattern = Pattern.compile(";(.*?)$");
+        Pattern pattern = Pattern.compile("://.*/.*;(.*?)$");
         Matcher matcher = pattern.matcher(uri);
         if (matcher.find()) {
             return matcher.group(1);
@@ -82,11 +82,11 @@ public class NetInfUtils {
                 try {
                     ndo.addLocator(Locator.fromString(locators.getString(i)));
                 } catch (JSONException e) {
-                    Log.w(TAG, "Invalid locator, skipped", e);
+                    Log.w(TAG, "Skipped invalid locator", e);
                 }
             }
         } catch (JSONException e) {
-            Log.w(TAG, "Failed to parse locators, defaulting to none", e);
+            Log.w(TAG, "Failed to parse locators, defaulting to none");
         }
         // Metadata
         try {
@@ -95,6 +95,7 @@ public class NetInfUtils {
             Log.w(TAG, "Failed to parse metadata, defaulting to empty");
         }
 
+        Log.d(TAG, ndo.toString());
         return ndo;
 
     }
