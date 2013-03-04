@@ -13,7 +13,7 @@ public class PublishController {
 
     public static final String TAG = "PublishController";
 
-    Map<Api, Set<PublishService>> mPublishServices;
+    private Map<Api, Set<PublishService>> mPublishServices;
 
     public PublishController() {
         mPublishServices = new HashMap<Api, Set<PublishService>>();

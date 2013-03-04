@@ -9,7 +9,7 @@ public class ApiController {
 
     public static final String TAG = "ApiController";
 
-    Set<Api> mApis = new LinkedHashSet<Api>();
+    private Set<Api> mApis = new LinkedHashSet<Api>();
 
     public void addApi(Api api) {
         mApis.add(api);

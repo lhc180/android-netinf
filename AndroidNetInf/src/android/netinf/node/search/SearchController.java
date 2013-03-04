@@ -13,7 +13,7 @@ public class SearchController {
 
     public static final String TAG = "SearchController";
 
-    Map<Api, Set<SearchService>> mSearchServices;
+    private Map<Api, Set<SearchService>> mSearchServices;
 
     public SearchController() {
         mSearchServices = new HashMap<Api, Set<SearchService>>();

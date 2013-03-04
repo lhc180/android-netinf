@@ -13,7 +13,7 @@ public class GetController {
 
     public static final String TAG = "GetController";
 
-    Map<Api, Set<GetService>> mGetServices;
+    private Map<Api, Set<GetService>> mGetServices;
 
     public GetController() {
         mGetServices = new HashMap<Api, Set<GetService>>();
