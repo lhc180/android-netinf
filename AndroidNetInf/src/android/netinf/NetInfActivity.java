@@ -51,7 +51,7 @@ public class NetInfActivity extends Activity {
         try {
 
             ndo = new Ndo("sha-256", hash(getFile1()));
-            ndo.setOctets(getFile1());
+            ndo.cache(getFile1());
             ndo.addLocator(Locator.fromBluetooth("11:22:33:44"));
             JSONObject meta = new JSONObject();
             meta.put("hello", "world");

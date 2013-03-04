@@ -15,6 +15,7 @@ import android.netinf.common.Locator;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 import android.netinf.node.publish.Publish;
+import android.netinf.node.publish.PublishResponse;
 import android.netinf.node.publish.PublishService;
 import android.util.Log;
 
@@ -29,11 +30,9 @@ public class BluetoothPublish implements PublishService {
     }
 
     @Override
-    public NetInfStatus publish(Publish publish) {
+    public PublishResponse perform(Publish publish) {
             Log.v(TAG, "publish()");
             Log.i(TAG, "Bluetooth CL received PUBLISH: " + publish);
-
-            NetInfStatus result = NetInfStatus.I_FAILED;
 
             // Create JSON representation of Pulbish
             JSONObject jo = null;
@@ -41,10 +40,11 @@ public class BluetoothPublish implements PublishService {
                 jo = createPublishJson(publish);
             } catch (JSONException e) {
                 Log.wtf(TAG, "Failed to create JSON representation of Publish", e);
-                return NetInfStatus.I_FAILED;
+                return new PublishResponse(publish, NetInfStatus.FAILED);
             }
 
             // Publish to all relevant devices
+            NetInfStatus status = NetInfStatus.FAILED;
             for (BluetoothDevice device : mApi.getBluetoothDevices()) {
 
                 BluetoothSocket socket = null;
@@ -65,8 +65,8 @@ public class BluetoothPublish implements PublishService {
 
                     // Receive
                     JSONObject response = BluetoothCommon.readJson(in);
-                    if (response.getInt("status") == NetInfStatus.OK.getCode()) {
-                        result = NetInfStatus.OK;
+                    if (NetInfStatus.OK.equals(response.getInt("status"))) {
+                        status = NetInfStatus.OK;
                         Log.i(TAG, "PUBLISH to " + device.getName() + " succeeded");
                     } else {
                         Log.e(TAG, "PUBLISH to " + device.getName() + " failed: " + response.getString("status"));
@@ -83,7 +83,7 @@ public class BluetoothPublish implements PublishService {
                 }
 
             }
-            return result;
+            return new PublishResponse(publish, status);
     }
 
     private JSONObject createPublishJson(Publish publish) throws JSONException {

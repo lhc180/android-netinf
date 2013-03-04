@@ -66,12 +66,13 @@ public class NetInfUtils {
 
         String algorithm = getAlgorithm(uri);
         String hash = getHash(uri);
-        Ndo ndo = new Ndo(algorithm, hash);
+
+        Ndo.Builder builder = new Ndo.Builder(algorithm, hash);
 
         // Optional
         // Authority
         try {
-            ndo.setAuthority(getAuthority(uri));
+            builder.authority(getAuthority(uri));
         } catch (NetInfException e) {
             Log.w(TAG, "Failed to parse authority, defaulting to none", e);
         }
@@ -80,7 +81,7 @@ public class NetInfUtils {
             JSONArray locators = jo.getJSONArray("locators");
             for (int i = 0; i < locators.length(); i++) {
                 try {
-                    ndo.addLocator(Locator.fromString(locators.getString(i)));
+                    builder.locator(Locator.fromString(locators.getString(i)));
                 } catch (JSONException e) {
                     Log.w(TAG, "Skipped invalid locator", e);
                 }
@@ -90,13 +91,12 @@ public class NetInfUtils {
         }
         // Metadata
         try {
-            ndo.addMetadata(new Metadata(jo.getJSONObject("ext").getJSONObject("meta")));
+            builder.metadata(new Metadata(jo.getJSONObject("ext").getJSONObject("meta")));
         } catch (JSONException e) {
             Log.w(TAG, "Failed to parse metadata, defaulting to empty");
         }
 
-        Log.d(TAG, ndo.toString());
-        return ndo;
+        return builder.build();
 
     }
 

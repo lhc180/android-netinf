@@ -19,7 +19,9 @@ import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfStatus;
 import android.netinf.common.NetInfUtils;
 import android.netinf.node.get.Get;
+import android.netinf.node.get.GetResponse;
 import android.netinf.node.publish.Publish;
+import android.netinf.node.publish.PublishResponse;
 import android.util.Log;
 
 
@@ -93,27 +95,27 @@ public class BluetoothServer implements Runnable {
 
     }
 
-    private void handlePublish(DataInputStream in, DataOutputStream out, JSONObject jo)
+    private void handlePublish(DataInputStream in, DataOutputStream out, JSONObject publishJo)
             throws NetInfException, JSONException, IOException {
 
         Log.v(TAG, "handlePublish()");
-        Ndo ndo = NetInfUtils.toNdo(jo);
+        Ndo ndo = NetInfUtils.toNdo(publishJo);
         Log.i(TAG, "Bluetooth API received PUBLISH: " + ndo.getUri());
 
         // Create and execute publish
-        Publish publish = new Publish(mApi, jo.getString("msgid"), ndo);
-        if (jo.getBoolean("octets") == true) {
+        Publish.Builder builder = new Publish.Builder(mApi, publishJo.getString("msgid"), ndo);
+        if (publishJo.getBoolean("octets") == true) {
             byte[] octets = BluetoothCommon.readFile(in);
-            ndo.setOctets(octets);
-            publish.setFullPut(true);
+            ndo.cache(octets);
+            builder.fullPut();
         }
-        publish.execute();
+        PublishResponse response = builder.build().call();
 
         // Create publish response
-        JSONObject response = new JSONObject();
-        response.put("msgid", publish.getId());
-        response.put("status", publish.getResult().getCode());
-        BluetoothCommon.write(response, out);
+        JSONObject responseJo = new JSONObject();
+        responseJo.put("msgid", response.getId());
+        responseJo.put("status", response.getStatus().getCode());
+        BluetoothCommon.write(responseJo, out);
 
     }
 
@@ -125,30 +127,30 @@ public class BluetoothServer implements Runnable {
         Log.i(TAG, "Bluetooth API received GET: " + ndo.getUri());
 
         // Create and execute get
-        Get get = new Get(mApi, jo.getString("msgid"), ndo);
-        Ndo result = get.execute();
+        Get get = new Get.Builder(mApi, jo.getString("msgid"), ndo).build();
+        GetResponse response = get.call();
 
         // Create get response
-        JSONObject response = new JSONObject();
-        response.put("msgid", get.getId());
+        JSONObject responseJo = new JSONObject();
+        responseJo.put("msgid", response.getId());
 
-        if (result == null) {
-            response.put("status", NetInfStatus.I_FAILED.getCode());
-            BluetoothCommon.write(response, out);
+        if (response.getStatus().isError()) {
+            responseJo.put("status", NetInfStatus.FAILED.getCode());
+            BluetoothCommon.write(responseJo, out);
             return;
         }
 
-        response.put("status", NetInfStatus.OK.getCode());
+        responseJo.put("status", NetInfStatus.OK.getCode());
         if (ndo.isCached()) {
-            response.put("octets", true);
-            BluetoothCommon.write(response, out);
+            responseJo.put("octets", true);
+            BluetoothCommon.write(responseJo, out);
             BluetoothCommon.write(ndo.getOctets(), out);
         } else {
             JSONArray locators = new JSONArray();
             for (Locator locator : ndo.getLocators()) {
                 locators.put(locator.toString());
             }
-            BluetoothCommon.write(response, out);
+            BluetoothCommon.write(responseJo, out);
         }
 
     }

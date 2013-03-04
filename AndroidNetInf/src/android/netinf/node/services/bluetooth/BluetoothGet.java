@@ -15,6 +15,7 @@ import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfStatus;
 import android.netinf.node.get.Get;
+import android.netinf.node.get.GetResponse;
 import android.netinf.node.get.GetService;
 import android.util.Log;
 
@@ -29,7 +30,7 @@ public class BluetoothGet implements GetService {
     }
 
     @Override
-    public Ndo get(Get get) {
+    public GetResponse perform(Get get) {
         Log.v(TAG, "get()");
         Log.i(TAG, "Bluetooth CL received GET: " + get);
 
@@ -60,7 +61,7 @@ public class BluetoothGet implements GetService {
                 BluetoothCommon.write(jo, out);
 
                 // Read
-                return handleGetResponse(get, in);
+                return parseGetResponse(get, in);
 
             } catch (IOException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
@@ -88,29 +89,29 @@ public class BluetoothGet implements GetService {
 
     }
 
-    private Ndo handleGetResponse(Get get, DataInputStream in) throws IOException, JSONException, NetInfException {
+    private GetResponse parseGetResponse(Get get, DataInputStream in) throws IOException, JSONException, NetInfException {
 
         JSONObject jo = BluetoothCommon.readJson(in);
 
         if (jo.getInt("status") != NetInfStatus.OK.getCode()) {
-            return null;
+            return new GetResponse(get, NetInfStatus.FAILED);
         }
 
-        Ndo ndo = new Ndo(get.getNdo());
-
-        if (jo.has("octets") && jo.getBoolean("octets")) {
-            byte[] octets = BluetoothCommon.readFile(in);
-            ndo.setOctets(octets);
-        }
+        Ndo.Builder builder = new Ndo.Builder(get.getNdo());
 
         if (jo.has("locators")){
             JSONArray locators = jo.getJSONArray("locators");
             for (int i = 0; i < locators.length(); i++) {
-                ndo.addLocator(Locator.fromString(locators.getString(i)));
+                builder.locator(Locator.fromString(locators.getString(i)));
             }
         }
 
-        return ndo;
+        if (jo.has("octets") && jo.getBoolean("octets")) {
+            byte[] octets = BluetoothCommon.readFile(in);
+            get.getNdo().cache(octets);
+        }
+
+        return new GetResponse(get, NetInfStatus.OK, builder.build());
 
     }
 

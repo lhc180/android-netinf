@@ -1,9 +1,12 @@
 package android.netinf.common;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.LinkedHashSet;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
@@ -12,6 +15,38 @@ import android.os.Environment;
 
 
 public class Ndo implements Serializable {
+
+    public static class Builder {
+
+        private String mAuthority = "";
+        private String mAlgorithm;
+        private String mHash;
+        private Set<Locator> mLocators = new HashSet<Locator>();
+        private Metadata mMetadata = new Metadata();
+
+        public Builder(Ndo ndo) {
+            mAuthority = ndo.mAuthority;
+            mAlgorithm = ndo.mAlgorithm;
+            mHash = ndo.mHash;
+            mLocators.addAll(ndo.mLocators);
+            mMetadata = new Metadata(ndo.mMetadata);
+        }
+
+        public Builder(String algorithm, String hash) {
+            mAlgorithm = algorithm;
+            mHash = hash;
+        }
+
+        public Builder authority(String authority) { mAuthority = authority; return this; }
+        public Builder locator(Locator locator) { mLocators.add(locator); return this; }
+        public Builder locators(Set<Locator> locators) { mLocators.addAll(locators); return this; }
+        public Builder metadata(Metadata metadata) { mMetadata = metadata; return this; }
+
+        public Ndo build() {
+            return new Ndo(this);
+        }
+
+    }
 
     /** Log Tag. */
     public static final String TAG = "Ndo";
@@ -22,56 +57,69 @@ public class Ndo implements Serializable {
     private String mAuthority;
     private String mAlgorithm;
     private String mHash;
-    private LinkedHashSet<Locator> mLocators;
+    private Set<Locator> mLocators;
     private Metadata mMetadata;
     private File mOctets;
 
-    public Ndo(String algorithm, String hash) {
-        mAuthority = "";
-        mAlgorithm = algorithm;
-        mHash = hash;
-        mLocators = new LinkedHashSet<Locator>();
-        mMetadata = new Metadata();
-        mOctets = new File(CACHE_FOLDER, hash);
+    private Ndo(Builder builder) {
+        mAuthority = builder.mAuthority;
+        mAlgorithm = builder.mAlgorithm;
+        mHash = builder.mHash;
+        mLocators = Collections.unmodifiableSet(builder.mLocators);
+        mMetadata = builder.mMetadata;
+        mOctets = new File(CACHE_FOLDER, builder.mHash);
     }
 
-    public Ndo(Ndo ndo) {
-        mAuthority = ndo.mAuthority;
-        mAlgorithm = ndo.mAlgorithm;
-        mHash = ndo.mHash;
-        mLocators = new LinkedHashSet<Locator>(ndo.mLocators);
-        mMetadata = new Metadata(ndo.mMetadata);
-        mOctets = ndo.mOctets;
-    }
+//    public Ndo(String algorithm, String hash) {
+//        mAuthority = "";
+//        mAlgorithm = algorithm;
+//        mHash = hash;
+//        mLocators = new LinkedHashSet<Locator>();
+//        mMetadata = new Metadata();
+//        mOctets = new File(CACHE_FOLDER, hash);
+//    }
+//
+//    public Ndo(Ndo ndo) {
+//        mAuthority = ndo.mAuthority;
+//        mAlgorithm = ndo.mAlgorithm;
+//        mHash = ndo.mHash;
+//        mLocators = new LinkedHashSet<Locator>(ndo.mLocators);
+//        mMetadata = new Metadata(ndo.mMetadata);
+//        mOctets = ndo.mOctets;
+//    }
+//
+//    /**
+//     * Adds a {@link Locator} to the {@link Ndo}.
+//     * @param locator
+//     *     The {@link Locator}
+//     */
+//    public void addLocator(Locator locator) {
+//        mLocators.add(locator);
+//    }
+//
+//    public void addLocators(Set<Locator> locators) {
+//        mLocators.addAll(locators);
+//    }
+//
+//    /**
+//     * Adds {@link Metadata} to the {@link Ndo}.
+//     * @param metadata
+//     *     The {@link Metadata} to add
+//     */
+//    public void addMetadata(Metadata metadata) {
+//        mMetadata.merge(metadata);
+//    }
 
-    /**
-     * Adds a {@link Locator} to the {@link Ndo}.
-     * @param locator
-     *     The {@link Locator}
-     */
-    public void addLocator(Locator locator) {
-        mLocators.add(locator);
-    }
-
-    public void addLocators(Set<Locator> locators) {
-        mLocators.addAll(locators);
-    }
-
-    /**
-     * Adds {@link Metadata} to the {@link Ndo}.
-     * @param metadata
-     *     The {@link Metadata} to add
-     */
-    public void addMetadata(Metadata metadata) {
-        mMetadata.merge(metadata);
-    }
-
-    public void setOctets(File file) throws IOException {
+    public void cache(File file) throws IOException {
         FileUtils.copyFile(file, mOctets);
     }
 
-    public void setOctets(byte[] octets) throws IOException {
+    public void cache(byte[] octets) throws IOException {
         FileUtils.writeByteArrayToFile(mOctets, octets);
+    }
+
+    public FileOutputStream newCacheStream() throws FileNotFoundException {
+        return new FileOutputStream(mOctets);
     }
 
     /**
@@ -136,9 +184,9 @@ public class Ndo implements Serializable {
         return mOctets;
     }
 
-    public void setAuthority(String authority) {
-        mAuthority = authority;
-    }
+//    public void setAuthority(String authority) {
+//        mAuthority = authority;
+//    }
 
     @Override
     public String toString() {

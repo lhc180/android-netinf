@@ -5,11 +5,11 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import android.netinf.common.Ndo;
+import android.netinf.common.NetInfStatus;
 import android.netinf.node.api.Api;
 import android.util.Log;
 
-public class GetController {
+public class GetController implements GetService {
 
     public static final String TAG = "GetController";
 
@@ -26,19 +26,20 @@ public class GetController {
         mGetServices.get(source).add(destination);
     }
 
-    public Ndo get(Get get) {
+    @Override
+    public GetResponse perform(Get get) {
         Log.v(TAG, "get()");
 
         for (GetService getService : mGetServices.get(get.getSource())) {
-            Ndo ndo = getService.get(get);
-            if (ndo != null) {
+            GetResponse response = getService.perform(get);
+            if (response.getStatus().isSuccess()) {
                 Log.i(TAG, "GET produced an NDO");
-                return ndo;
+                return new GetResponse(get, NetInfStatus.OK, response.getNdo());
             }
         }
 
         Log.i(TAG, "GET did not produce an NDO");
-        return null;
+        return new GetResponse(get, NetInfStatus.FAILED);
     }
 
 }

@@ -14,10 +14,13 @@ import android.netinf.NetInfApplication;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 import android.netinf.node.get.Get;
+import android.netinf.node.get.GetResponse;
 import android.netinf.node.get.GetService;
 import android.netinf.node.publish.Publish;
+import android.netinf.node.publish.PublishResponse;
 import android.netinf.node.publish.PublishService;
 import android.netinf.node.search.Search;
+import android.netinf.node.search.SearchResponse;
 import android.netinf.node.search.SearchService;
 import android.util.Log;
 
@@ -42,7 +45,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     @Override
-    public NetInfStatus publish(Publish publish) {
+    public PublishResponse perform(Publish publish) {
         Log.v(TAG, "publish()");
         Log.i(TAG, "Database received PUBLISH: " + publish);
         Ndo ndo = publish.getNdo();
@@ -54,23 +57,24 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
             Log.i(TAG,"NDO already in database");
         }
         Log.i(TAG, "PUBLISH to database succeeded");
-        return NetInfStatus.OK; // TODO check if actually inserted
+        return new PublishResponse(publish, NetInfStatus.OK); // TODO check if actually inserted
     }
 
     @Override
-    public Ndo get(Get get) {
+    public GetResponse perform(Get get) {
         Log.v(TAG, "get()");
         Log.i(TAG, "Database received GET: " + get);
         byte[] blob = getBlob(get.getNdo());
-        Ndo result = null;
+        Ndo ndo = null;
         if (blob != null ) {
-            result = (Ndo) SerializationUtils.deserialize(blob);
+            ndo = (Ndo) SerializationUtils.deserialize(blob);
+            return new GetResponse(get, NetInfStatus.OK, ndo);
         }
-        return result;
+        return new GetResponse(get, NetInfStatus.FAILED);
     }
 
     @Override
-    public void search(Search search) {
+    public SearchResponse perform(Search search) {
         Log.v(TAG, "search()");
         Log.i(TAG, "Database received SEARCH: " + search);
         String[] columns = {COLUMN_NDO};
@@ -89,7 +93,9 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
         }
         cursor.close();
         Log.i(TAG, "SEARCH in database produced " + results.size() + " NDO(s)");
-        search.submitResults(results);
+
+        return new SearchResponse.Builder(search).addResults(results).build();
+
     }
 
     private byte[] getBlob(Ndo ndo) {

@@ -4,12 +4,13 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import android.netinf.common.Ndo;
 import android.netinf.node.api.Api;
 import android.util.Log;
 
-public class SearchController {
+public class SearchController implements SearchService {
 
     public static final String TAG = "SearchController";
 
@@ -26,25 +27,34 @@ public class SearchController {
         mSearchServices.get(source).add(destination);
     }
 
-    public Set<Ndo> search(final Search search) {
+    @Override
+    public SearchResponse perform(final Search search) {
         Log.v(TAG, "search()");
 
-        search.setPending(mSearchServices.get(search.getSource()).size());
+        Set<SearchService> searchServices = mSearchServices.get(search.getSource());
+        final CountDownLatch pendingSearches = new CountDownLatch(searchServices.size());
+        final SearchResponse.Builder builder = new SearchResponse.Builder(search);
 
-        for (final SearchService searchService : mSearchServices.get(search.getSource())) {
+        for (final SearchService searchService : searchServices) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    searchService.search(search);
+                    SearchResponse response = searchService.perform(search);
+                    builder.addResults(response.getResults());
+                    pendingSearches.countDown();
                 }
             }).start();
         }
 
-        search.await();
+        try {
+            pendingSearches.await(search.getTimeout(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Log.i(TAG, "SEARCH interrupted");
+        }
 
         Log.i(TAG, "SEARCH produced " + search.getResults().size() + " NDO(s)");
 
-        return search.getResults();
+        return builder.build();
 
     }
 

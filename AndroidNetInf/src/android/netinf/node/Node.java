@@ -1,24 +1,23 @@
 package android.netinf.node;
 
-import java.util.Set;
-
-import android.netinf.common.Ndo;
-import android.netinf.common.NetInfStatus;
 import android.netinf.node.api.Api;
 import android.netinf.node.api.ApiController;
 import android.netinf.node.get.Get;
 import android.netinf.node.get.GetController;
+import android.netinf.node.get.GetResponse;
 import android.netinf.node.get.GetService;
 import android.netinf.node.publish.Publish;
 import android.netinf.node.publish.PublishController;
+import android.netinf.node.publish.PublishResponse;
 import android.netinf.node.publish.PublishService;
 import android.netinf.node.search.Search;
 import android.netinf.node.search.SearchController;
+import android.netinf.node.search.SearchResponse;
 import android.netinf.node.search.SearchService;
 import android.util.Log;
 
 
-public class Node {
+public class Node implements PublishService, GetService, SearchService {
 
     public static final String TAG = "Node";
 
@@ -43,16 +42,18 @@ public class Node {
         mApiController.start();
     }
 
-    public NetInfStatus publish(Publish publish) {
-        return mPublishController.publish(publish);
+    @Override
+    public PublishResponse perform(Publish publish) {
+        return mPublishController.perform(publish);
     }
 
-    public Ndo get(Get get) {
-        return mGetController.get(get);
+    @Override
+    public GetResponse perform(Get get) {
+        return mGetController.perform(get);
     }
 
-    public Set<Ndo> search(Search search) {
-        return mSearchController.search(search);
+    public SearchResponse search(Search search) {
+        return mSearchController.perform(search);
     }
 
     public void setApiController(ApiController apiController) {

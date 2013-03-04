@@ -1,60 +1,56 @@
 package android.netinf.node.publish;
 
 import android.netinf.common.Ndo;
-import android.netinf.common.NetInfStatus;
+import android.netinf.common.Request;
 import android.netinf.node.Node;
 import android.netinf.node.api.Api;
 
-public class Publish {
+public class Publish extends Request<PublishResponse> {
 
-    // Request
-    private Api mSource;
-    private String mId;
+    public static class Builder {
+
+        private Api mSource;
+        private String mId;
+        private Ndo mNdo;
+        private boolean mFullPut = false;
+
+        public Builder(Api api, String id, Ndo ndo) {
+            if (ndo == null) {
+                throw new NullPointerException("ndo must not be null");
+            }
+            mSource = api;
+            mId = id;
+            mNdo = ndo;
+        }
+
+        public Builder fullPut() { mFullPut = true; return this; }
+
+        public Publish build() {
+            return new Publish(this);
+        }
+
+    }
+
     private Ndo mNdo;
     private boolean mFullPut;
-//    private Date mReceived;
 
-    // Result
-    private NetInfStatus mStatus;
-
-
-    public Publish(Api source, String id, Ndo ndo) {
-        if (ndo == null) {
-            throw new NullPointerException("ndo must not be null");
-        }
-        mSource = source;
-        mId = id;
-        mNdo = ndo;
-        mFullPut = false;
-        mStatus = NetInfStatus.TIMEOUT;
-    }
-
-    public Api getSource() {
-        return mSource;
-    }
-
-    public String getId() {
-        return mId;
+    private Publish(Builder builder) {
+        super(builder.mSource, builder.mId);
+        mNdo = builder.mNdo;
+        mFullPut = builder.mFullPut;
     }
 
     public Ndo getNdo() {
         return mNdo;
     }
 
-    public void setFullPut(boolean isFullPut) {
-        mFullPut = isFullPut;
-    }
-
     public boolean isFullPut() {
         return mFullPut;
     }
 
-    public void execute() {
-        mStatus = Node.getInstance().publish(this);
-    }
-
-    public NetInfStatus getResult() {
-        return mStatus;
+    @Override
+    public PublishResponse call() {
+        return Node.getInstance().perform(this);
     }
 
     @Override

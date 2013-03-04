@@ -21,6 +21,7 @@ import android.netinf.common.Locator;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 import android.netinf.node.publish.Publish;
+import android.netinf.node.publish.PublishResponse;
 import android.netinf.node.publish.PublishService;
 import android.util.Log;
 
@@ -30,8 +31,9 @@ public class HttpPublishService implements PublishService {
 
     public static final int TIMEOUT = 2000;
 
+    // TODO WORK HERE, FIX SO THESE CLASSES RETURNS THE NEW RESPONSE CLASSES
     @Override
-    public NetInfStatus publish(Publish publish) {
+    public PublishResponse perform(Publish publish) {
         Log.v(TAG, "publish()");
         Log.i(TAG, "HTTP CL received PUBLISH: " + publish);
 

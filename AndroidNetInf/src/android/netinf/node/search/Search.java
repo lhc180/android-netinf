@@ -1,34 +1,54 @@
 package android.netinf.node.search;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import android.netinf.common.Ndo;
+import android.netinf.common.Request;
 import android.netinf.node.Node;
 import android.netinf.node.api.Api;
 
 
-public class Search {
+public class Search extends Request<SearchResponse> {
 
-    private Api mSource;
+    public static class Builder {
+
+        private Api mSource;
+        private String mId;
+        private long mTimeout = 1000;
+        private Set<String> mTokens = new HashSet<String>();
+        private Set<Ndo> mResults = new HashSet<Ndo>();
+
+        public Builder(Api api, String id) {
+            mSource = api;
+            mId = id;
+        }
+
+        public Builder timeout(long timeout) { mTimeout = timeout; return this; }
+        public Builder token(String token) { mTokens.add(token); return this; }
+        public Builder tokens(Set<String> tokens) { mTokens.addAll(tokens); return this; }
+
+        public Search build() {
+            return new Search(this);
+        }
+
+    }
+
     private Set<String> mTokens;
     private long mTimeout;
     private Set<Ndo> mResults;
-    private CountDownLatch mPending;
 
-    public Search(Api source, Set<String> tokens, long timeout) {
-        mSource = source;
-        mTokens = tokens;
-        mTimeout = timeout;
-        mResults = new HashSet<Ndo>();
-        mPending = new CountDownLatch(0);
+    private Search(Builder builder) {
+        super(builder.mSource, builder.mId);
+        mTokens = Collections.unmodifiableSet(builder.mTokens);
+        mTimeout = builder.mTimeout;
+        mResults = builder.mResults;
     }
 
-    public Api getSource() {
-        return mSource;
+    public long getTimeout() {
+        return mTimeout;
     }
 
     public Set<String> getTokens() {
@@ -39,25 +59,9 @@ public class Search {
         return mResults;
     }
 
-    public void setPending(int searches) {
-        mPending = new CountDownLatch(searches);
-    }
-
-    public void await() {
-        try {
-            mPending.await(mTimeout, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-
-        }
-    }
-
-    public synchronized void submitResults(Set<Ndo> results) {
-        mResults.addAll(results);
-        mPending.countDown();
-    }
-
-    public Set<Ndo> execute() {
-        return Node.getInstance().search(this);
+    @Override
+    public SearchResponse call() throws Exception {
+        return Node.getInstance().perform(this);
     }
 
     @Override

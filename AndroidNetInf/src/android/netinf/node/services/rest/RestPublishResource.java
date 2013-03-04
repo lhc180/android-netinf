@@ -66,7 +66,7 @@ public class RestPublishResource extends ServerResource {
         // Full Put
         if (query.containsKey(RestCommon.PATH)) {
             try {
-                ndo.setOctets(new File(query.get(RestCommon.PATH)));
+                ndo.cache(new File(query.get(RestCommon.PATH)));
                 publish.setFullPut(true);
             } catch (IOException e) {
                 Log.e(TAG, "Failed to set NDO octets", e);
