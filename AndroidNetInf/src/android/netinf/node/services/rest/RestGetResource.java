@@ -11,8 +11,8 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
-import android.netinf.common.NetInfUtils;
 import android.netinf.node.get.Get;
+import android.netinf.node.get.GetResponse;
 import android.util.Log;
 
 public class RestGetResource extends ServerResource {
@@ -39,14 +39,15 @@ public class RestGetResource extends ServerResource {
         // Create NDO
         String algorithm = query.get(RestCommon.ALGORITHM);
         String hash = query.get(RestCommon.HASH);
-        Ndo ndo = new Ndo(algorithm, hash);
-        Get get = new Get(RestApi.getInstance(), NetInfUtils.newMessageId(), ndo);
+        Ndo ndo = new Ndo.Builder(algorithm, hash).build();
+        Get get = new Get.Builder(RestApi.getInstance(), ndo).build();
 
         Log.i(TAG, "REST API received GET: " + get);
 
         // Get
-        Ndo result = get.execute();
-        if (result == null || !result.isCached()) {
+        GetResponse response = get.call();
+
+        if (response.getStatus().isError() || !response.getNdo().isCached()) {
             setStatus(Status.SUCCESS_NO_CONTENT);
             return null;
         }
@@ -54,8 +55,8 @@ public class RestGetResource extends ServerResource {
         try {
 
             JSONObject json = new JSONObject();
-            json.put(RestCommon.PATH, result.getOctets().getCanonicalPath());
-            json.put(RestCommon.META, result.getMetadata().toString());
+            json.put(RestCommon.PATH, response.getNdo().getOctets().getCanonicalPath());
+            json.put(RestCommon.META, response.getNdo().getMetadata().toString());
 
             setStatus(Status.SUCCESS_OK);
             return new StringRepresentation(json.toString());

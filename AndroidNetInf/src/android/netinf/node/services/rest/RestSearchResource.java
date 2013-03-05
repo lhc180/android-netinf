@@ -14,7 +14,9 @@ import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
+import android.netinf.common.NetInfUtils;
 import android.netinf.node.search.Search;
+import android.netinf.node.search.SearchResponse;
 import android.util.Log;
 
 public class RestSearchResource extends ServerResource {
@@ -40,15 +42,16 @@ public class RestSearchResource extends ServerResource {
         for (String token : query.get(RestCommon.TOKENS).split(" ")) {
             tokens.add(token);
         }
-        Search search = new Search(RestApi.getInstance(), tokens, TIMEOUT);
+        Search search = new Search.Builder(RestApi.getInstance(), NetInfUtils.newId()).tokens(tokens).timeout(TIMEOUT).build();
         Log.i(TAG, "REST API received SEARCH: " + search);
-        Set<Ndo> ndos = search.execute();
+
+        SearchResponse response = search.call();
 
         try {
             JSONObject json = new JSONObject();
             JSONArray results = new JSONArray();
             json.put("results", results);
-            for (Ndo ndo : ndos) {
+            for (Ndo ndo : response.getResults()) {
                 JSONObject result = new JSONObject();
                 result.put("ni", ndo.getUri());
                 result.put("meta", ndo.getMetadata().toJson());

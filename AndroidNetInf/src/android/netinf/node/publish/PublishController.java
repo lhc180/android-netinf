@@ -16,28 +16,49 @@ public class PublishController implements PublishService {
     public static final String TAG = "PublishController";
 
     private Map<Api, Set<PublishService>> mPublishServices;
+    private Map<Api, Set<PublishService>> mLocalPublishServices;
 
     public PublishController() {
         mPublishServices = new HashMap<Api, Set<PublishService>>();
+        mLocalPublishServices = new HashMap<Api, Set<PublishService>>();
     }
 
-    public void registerPublishService(Api source, PublishService destination) {
+    public void addPublishService(Api source, PublishService destination) {
         if (!mPublishServices.containsKey(source)) {
             mPublishServices.put(source, new LinkedHashSet<PublishService>());
         }
         mPublishServices.get(source).add(destination);
     }
 
+    public void addLocalPublishService(Api source, PublishService destination) {
+        if (!mLocalPublishServices.containsKey(source)) {
+            mLocalPublishServices.put(source, new LinkedHashSet<PublishService>());
+        }
+        mLocalPublishServices.get(source).add(destination);
+    }
+
     @Override
-    public PublishResponse perform(Publish publish) {
+    public PublishResponse perform(Publish incomingPublish) {
         Log.v(TAG, "perform()");
+
+        // Reduce hop limit
+        Publish publish = new Publish.Builder(incomingPublish).consumeHop().build();
 
         List<PublishResponse> responses = new LinkedList<PublishResponse>();
 
-        for (PublishService publishService : mPublishServices.get(publish.getSource())) {
+        // Check local services
+        for (PublishService publishService : mLocalPublishServices.get(publish.getSource())) {
             responses.add(publishService.perform(publish));
         }
 
+        // Check other services
+        if (publish.getHopLimit() > 0) {
+            for (PublishService publishService : mPublishServices.get(publish.getSource())) {
+                responses.add(publishService.perform(publish));
+            }
+        }
+
+        // Decide aggregated status
         for (PublishResponse response : responses) {
             if (response.getStatus().isSuccess()) {
                 Log.i(TAG, "PUBLISH succeeded at least once");

@@ -28,6 +28,7 @@ import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.node.search.Search;
+import android.netinf.node.search.SearchResponse;
 import android.netinf.node.search.SearchService;
 import android.util.Log;
 
@@ -38,7 +39,7 @@ public class HttpSearchService implements SearchService {
     public static final int TIMEOUT = 1000;
 
     @Override
-    public void search(Search search) {
+    public SearchResponse perform(Search search) {
         Log.v(TAG, "search()");
         Log.i(TAG, "HTTP CL received SEARCH: " + search);
 
@@ -48,13 +49,13 @@ public class HttpSearchService implements SearchService {
         HttpConnectionParams.setSoTimeout(params, TIMEOUT);
         HttpClient client = new DefaultHttpClient(params);
 
-        Set<Ndo> ndos = new LinkedHashSet<Ndo>();
+        Set<Ndo> results = new LinkedHashSet<Ndo>();
         for (String peer : HttpCommon.PEERS) {
             try {
                 HttpResponse response = client.execute(createSearch(peer, search));
                 int status = response.getStatusLine().getStatusCode();
                 if (status == HttpStatus.SC_OK) {
-                    ndos.addAll(parse(response));
+                    results.addAll(parse(response));
                 } else {
                     Log.e(TAG, "SEARCH to " + peer + " failed: " + status);
                 }
@@ -68,7 +69,8 @@ public class HttpSearchService implements SearchService {
                 Log.e(TAG, "SEARCH to " + peer + " failed", e);
             }
         }
-        search.submitResults(ndos);
+
+        return new SearchResponse.Builder(search).addResults(results).build();
 
     }
 
@@ -129,8 +131,7 @@ public class HttpSearchService implements SearchService {
                 String hash = getHash(result);
                 String metadata = getMetadata(result);
 
-                Ndo ndo = new Ndo(algorithm, hash);
-                ndo.addMetadata(new Metadata(metadata));
+                Ndo ndo = new Ndo.Builder(algorithm, hash).metadata(new Metadata(metadata)).build();
                 ndos.add(ndo);
 
             } catch (JSONException e) {

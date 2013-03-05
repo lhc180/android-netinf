@@ -59,13 +59,13 @@ public class NodeStarter implements Runnable {
 //        node.registerSearchService(restApi, db);
 //        node.registerSearchService(restApi, httpSearch);
         // Requests received on the Bluetooth Api should use...
-        node.registerPublishService(bluetoothApi, db);
-        node.registerGetService(bluetoothApi, db);
-        node.registerSearchService(bluetoothApi, db);
+        node.addPublishService(bluetoothApi, db);
+        node.addGetService(bluetoothApi, db);
+        node.addSearchService(bluetoothApi, db);
 
         // Debug
-        node.registerPublishService(null, db);
-        node.registerGetService(null, bluetoothGet);
+        node.addPublishService(null, db);
+        node.addGetService(null, bluetoothGet);
 
         // Start Node
         node.start();

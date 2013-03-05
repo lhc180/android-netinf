@@ -29,11 +29,11 @@ public class SearchResponse extends Response {
 
     }
 
-    private Set<Ndo> mResults;
+    private final Set<Ndo> mResults;
 
     private SearchResponse(Builder builder) {
         super(builder.mSearch.getId(), builder.mStatus);
-        mResults = builder.mResults;
+        mResults = Collections.unmodifiableSet(builder.mResults);
     }
 
     public Set<Ndo> getResults() {

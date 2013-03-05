@@ -31,7 +31,6 @@ public class HttpPublishService implements PublishService {
 
     public static final int TIMEOUT = 2000;
 
-    // TODO WORK HERE, FIX SO THESE CLASSES RETURNS THE NEW RESPONSE CLASSES
     @Override
     public PublishResponse perform(Publish publish) {
         Log.v(TAG, "publish()");
@@ -44,18 +43,18 @@ public class HttpPublishService implements PublishService {
         HttpClient client = new DefaultHttpClient(params);
 
         // Publish to all peers
-        NetInfStatus result = NetInfStatus.I_FAILED;
+        NetInfStatus status = NetInfStatus.FAILED;
         for (String peer : HttpCommon.PEERS) {
             try {
                 HttpResponse response = client.execute(createPublish(peer, publish));
                 Log.d(TAG, IOUtils.toString(response.getEntity().getContent()));
-                int status = response.getStatusLine().getStatusCode();
+                int code = response.getStatusLine().getStatusCode();
                 // NiProxy returns 200, Erlang returns 201
-                if (status == HttpStatus.SC_CREATED || status == HttpStatus.SC_OK) {
+                if (code == HttpStatus.SC_CREATED || code == HttpStatus.SC_OK) {
                     Log.i(TAG, "PUBLISH to " + peer + " succeeded");
-                    result = NetInfStatus.OK;
+                    status = NetInfStatus.OK;
                 } else {
-                    Log.e(TAG, "PUBLISH to " + peer + " failed: " + status);
+                    Log.e(TAG, "PUBLISH to " + peer + " failed: " + code);
                 }
 
             } catch (ClientProtocolException e) {
@@ -67,7 +66,7 @@ public class HttpPublishService implements PublishService {
             }
         }
 
-        return result;
+        return new PublishResponse(publish, status);
     }
 
     private HttpPost createPublish(String peer, Publish publish) throws UnsupportedEncodingException {

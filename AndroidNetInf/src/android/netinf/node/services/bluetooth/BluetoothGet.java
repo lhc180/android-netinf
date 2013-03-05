@@ -83,6 +83,7 @@ public class BluetoothGet implements GetService {
 
         jo.put("type", "get");
         jo.put("msgid", get.getId());
+        jo.put("hoplimit", get.getHopLimit());
         jo.put("uri", get.getNdo().getUri());
 
         return jo;

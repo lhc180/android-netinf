@@ -103,7 +103,7 @@ public class BluetoothServer implements Runnable {
         Log.i(TAG, "Bluetooth API received PUBLISH: " + ndo.getUri());
 
         // Create and execute publish
-        Publish.Builder builder = new Publish.Builder(mApi, publishJo.getString("msgid"), ndo);
+        Publish.Builder builder = new Publish.Builder(mApi, ndo).id(publishJo.getString("msgid")).hoplimit(publishJo.getInt("hoplimit"));
         if (publishJo.getBoolean("octets") == true) {
             byte[] octets = BluetoothCommon.readFile(in);
             ndo.cache(octets);
@@ -127,7 +127,7 @@ public class BluetoothServer implements Runnable {
         Log.i(TAG, "Bluetooth API received GET: " + ndo.getUri());
 
         // Create and execute get
-        Get get = new Get.Builder(mApi, jo.getString("msgid"), ndo).build();
+        Get get = new Get.Builder(mApi, ndo).id(jo.getString("msgid")).hoplimit(jo.getInt("hoplimit")).build();
         GetResponse response = get.call();
 
         // Create get response

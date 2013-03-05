@@ -103,6 +103,7 @@ public class BluetoothPublish implements PublishService {
 
         jo.put("type", "publish");
         jo.put("msgid", publish.getId());
+        jo.put("hoplimit", publish.getHopLimit());
         jo.put("uri", ndo.getUri());
         jo.put("locators", locators);
         jo.put("ext", meta);

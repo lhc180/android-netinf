@@ -1,5 +1,9 @@
 package android.netinf.node;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import android.netinf.node.api.Api;
 import android.netinf.node.api.ApiController;
 import android.netinf.node.get.Get;
@@ -29,6 +33,8 @@ public class Node implements PublishService, GetService, SearchService {
     private SearchController mSearchController;
     private ApiController mApiController;
 
+    private ExecutorService mRequestExecutor = Executors.newCachedThreadPool();
+
     private Node() {
 
     }
@@ -42,6 +48,22 @@ public class Node implements PublishService, GetService, SearchService {
         mApiController.start();
     }
 
+    // TODO use these 3
+    public Future<PublishResponse> submit(Publish publish) {
+        Log.i(TAG, "PUBLISH submitted to node for execution: " + publish);
+        return Node.getInstance().mRequestExecutor.submit(publish);
+    }
+
+    public Future<GetResponse> submit(Get get) {
+        Log.i(TAG, "GET submitted to node for execution: " + get);
+        return Node.getInstance().mRequestExecutor.submit(get);
+    }
+
+    public Future<SearchResponse> submit(Search search) {
+        Log.i(TAG, "SEARCH submitted to node for execution: " + search);
+        return Node.getInstance().mRequestExecutor.submit(search);
+    }
+
     @Override
     public PublishResponse perform(Publish publish) {
         return mPublishController.perform(publish);
@@ -52,7 +74,8 @@ public class Node implements PublishService, GetService, SearchService {
         return mGetController.perform(get);
     }
 
-    public SearchResponse search(Search search) {
+    @Override
+    public SearchResponse perform(Search search) {
         return mSearchController.perform(search);
     }
 
@@ -72,23 +95,34 @@ public class Node implements PublishService, GetService, SearchService {
         mSearchController = searchController;
     }
 
-    public void registerPublishService(Api source, PublishService destination) {
+    public void addPublishService(Api source, PublishService destination) {
         mApiController.addApi(source);
-        mPublishController.registerPublishService(source, destination);
+        mPublishController.addPublishService(source, destination);
     }
 
-    public void registerGetService(Api source, GetService destination) {
+    public void addGetService(Api source, GetService destination) {
         mApiController.addApi(source);
-        mGetController.registerGetService(source, destination);
+        mGetController.addGetService(source, destination);
     }
 
-    public void registerSearchService(Api source, SearchService destination) {
+    public void addSearchService(Api source, SearchService destination) {
         mApiController.addApi(source);
-        mSearchController.registerSearchService(source, destination);
+        mSearchController.addSearchService(source, destination);
     }
 
-    public void addApi(Api api) {
-        mApiController.addApi(api);
+    public void addLocalPublishService(Api source, PublishService destination) {
+        mApiController.addApi(source);
+        mPublishController.addLocalPublishService(source, destination);
+    }
+
+    public void addLocalGetService(Api source, GetService destination) {
+        mApiController.addApi(source);
+        mGetController.addLocalGetService(source, destination);
+    }
+
+    public void addLocalSearchService(Api source, SearchService destination) {
+        mApiController.addApi(source);
+        mSearchController.addLocalSearchService(source, destination);
     }
 
 }

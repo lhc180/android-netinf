@@ -6,7 +6,7 @@ import android.netinf.common.Response;
 
 public class GetResponse extends Response {
 
-    private Ndo mNdo;
+    private final Ndo mNdo;
 
     public GetResponse(Get get, NetInfStatus status, Ndo ndo) {
         super(get.getId(), status);

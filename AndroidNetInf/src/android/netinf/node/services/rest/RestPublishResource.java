@@ -14,9 +14,8 @@ import android.netinf.common.Locator;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
-import android.netinf.common.NetInfStatus;
-import android.netinf.common.NetInfUtils;
 import android.netinf.node.publish.Publish;
+import android.netinf.node.publish.PublishResponse;
 import android.util.Log;
 
 public class RestPublishResource extends ServerResource {
@@ -44,46 +43,48 @@ public class RestPublishResource extends ServerResource {
         // Create NDO
         String algorithm = query.get(RestCommon.ALGORITHM);
         String hash = query.get(RestCommon.HASH);
-        Ndo ndo = new Ndo(algorithm, hash);
+        Ndo.Builder ndoBuilder = new Ndo.Builder(algorithm, hash);
 
         // Add Bluetooth
         if (query.containsKey(RestCommon.BLUETOOTH)) {
-            ndo.addLocator(Locator.fromBluetooth(query.get(RestCommon.BLUETOOTH)));
+            ndoBuilder.locator(Locator.fromBluetooth(query.get(RestCommon.BLUETOOTH)));
         }
 
         // Add Metadata
         if (query.containsKey(RestCommon.META)) {
             try {
-                ndo.addMetadata(new Metadata(query.get(RestCommon.META)));
+                ndoBuilder.metadata(new Metadata(query.get(RestCommon.META)));
             } catch (NetInfException e) {
                 Log.w(TAG, "Tried to add invalid JSON as metadata", e);
             }
         }
+        Ndo ndo = ndoBuilder.build();
+
 
         // Create Publish
-        Publish publish = new Publish(RestApi.getInstance(), NetInfUtils.newMessageId(), ndo);
+        Publish.Builder publishBuilder = new Publish.Builder(RestApi.getInstance(), ndo);
 
         // Full Put
         if (query.containsKey(RestCommon.PATH)) {
             try {
                 ndo.cache(new File(query.get(RestCommon.PATH)));
-                publish.setFullPut(true);
+                publishBuilder.fullPut();
             } catch (IOException e) {
                 Log.e(TAG, "Failed to set NDO octets", e);
             }
         }
 
-        Log.i(TAG, "REST API received PUBLISH: " + publish);
+        Log.i(TAG, "REST API received PUBLISH: " + publishBuilder);
 
         // Publish
-        publish.execute();
-        NetInfStatus status = publish.getResult();
-        if (status != NetInfStatus.OK) {
+        PublishResponse response = publishBuilder.build().call();
+
+        if (response.getStatus().isSuccess()) {
+            setStatus(Status.SUCCESS_CREATED);
+        } else {
             setStatus(Status.SERVER_ERROR_INTERNAL);
-            return null;
         }
 
-        setStatus(Status.SUCCESS_CREATED);
         return null;
 
     }

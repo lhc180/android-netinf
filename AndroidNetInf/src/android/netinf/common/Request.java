@@ -8,10 +8,12 @@ public abstract class Request<T> implements Callable<T> {
 
     private Api mSource;
     private String mId;
+    private int mHopLimit;
 
-    protected Request(Api source, String id) {
+    protected Request(Api source, String id, int hopLimit) {
         mSource = source;
         mId = id;
+        mHopLimit = hopLimit;
     }
 
     public Api getSource() {
@@ -20,6 +22,10 @@ public abstract class Request<T> implements Callable<T> {
 
     public String getId() {
         return mId;
+    }
+
+    public int getHopLimit() {
+        return mHopLimit;
     }
 
 }

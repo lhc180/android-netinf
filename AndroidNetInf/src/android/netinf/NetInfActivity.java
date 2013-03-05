@@ -8,7 +8,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.RandomStringUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
@@ -18,7 +18,9 @@ import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfUtils;
 import android.netinf.node.get.Get;
+import android.netinf.node.get.GetResponse;
 import android.netinf.node.publish.Publish;
+import android.netinf.node.publish.PublishResponse;
 import android.netinf.node.services.database.DatabaseService;
 import android.os.Bundle;
 import android.os.Environment;
@@ -42,27 +44,36 @@ public class NetInfActivity extends Activity {
 
     }
 
+    private Metadata getMeta1() {
+        try {
+        JSONObject meta = new JSONObject();
+        meta.put("hello", "world");
+        JSONObject deeper = new JSONObject();
+        deeper.put("url", "example.com");
+        meta.put("deeper", deeper);
+        return new Metadata(meta);
+        } catch (JSONException e) {
+            throw new RuntimeException("wtf", e);
+        }
+    }
+
     private File getFile1() {
         return new File(Environment.getExternalStorageDirectory() + "/hello_world.jpg");
     }
 
     private Ndo getNdo1() {
-        Ndo ndo = null;
+
+        String algorithm = "sha-256";
+        String hash = hash(getFile1());
+        Locator locator = Locator.fromBluetooth("11:22:33:44");
+
+        Ndo ndo = new Ndo.Builder(algorithm, hash).locator(locator).metadata(getMeta1()).build();
         try {
-
-            ndo = new Ndo("sha-256", hash(getFile1()));
             ndo.cache(getFile1());
-            ndo.addLocator(Locator.fromBluetooth("11:22:33:44"));
-            JSONObject meta = new JSONObject();
-            meta.put("hello", "world");
-            JSONObject deeper = new JSONObject();
-            deeper.put("url", "example.com");
-            meta.put("deeper", deeper);
-            ndo.addMetadata(new Metadata(meta));
-
-        } catch (Throwable e) {
-            Log.wtf(TAG, "debugPublish() failed", e);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
         return ndo;
     }
 
@@ -73,10 +84,10 @@ public class NetInfActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Ndo ndo = new Ndo(getNdo1());
-                Publish publish = new Publish(null, RandomStringUtils.randomAlphanumeric(20), ndo);
-                publish.setFullPut(true);
-                publish.execute();
+                // Publish publish = new Publish.Builder(null, NetInfUtils.newMessageId(), getNdo1()).build();
+                Publish publish = new Publish.Builder(null, getNdo1()).fullPut().build();
+                PublishResponse response = publish.call();
+                Log.d(TAG, "PUBLISH resulted in status = " + response.getStatus());
             }
         }).start();
 
@@ -89,9 +100,9 @@ public class NetInfActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Get get = new Get(null, NetInfUtils.newMessageId(), getNdo1());
-                Ndo ndo = get.execute();
-                Log.d(TAG, "result of the get: " + ndo);
+                Get get = new Get.Builder(null, getNdo1()).build();
+                GetResponse response = get.call();
+                Log.d(TAG, "GET resulted in status = " + response.getStatus() + ", ndo = " + response.getNdo());
             }
         }).start();
 

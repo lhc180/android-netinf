@@ -47,7 +47,7 @@ public class NetInfUtils {
         }
     }
 
-    public static String newMessageId() {
+    public static String newId() {
         // TODO good enough?
         return RandomStringUtils.randomAlphanumeric(20);
     }
