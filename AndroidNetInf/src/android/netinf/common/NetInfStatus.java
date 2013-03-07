@@ -35,4 +35,16 @@ public class NetInfStatus {
         return new NetInfStatus(code);
     }
 
+    @Override
+    public String toString() {
+        // TODO use a map?
+        if (equals(NetInfStatus.OK)) {
+            return "OK";
+        } else if (equals(NetInfStatus.FAILED)) {
+            return "FAILED";
+        } else {
+            return "UNKNOWN: " + mCode;
+        }
+    }
+
 }

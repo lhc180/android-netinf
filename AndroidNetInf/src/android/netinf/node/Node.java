@@ -1,5 +1,6 @@
 package android.netinf.node;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -21,7 +22,7 @@ import android.netinf.node.search.SearchService;
 import android.util.Log;
 
 
-public class Node implements PublishService, GetService, SearchService {
+public class Node {
 
     public static final String TAG = "Node";
 
@@ -48,36 +49,65 @@ public class Node implements PublishService, GetService, SearchService {
         mApiController.start();
     }
 
-    // TODO use these 3
-    public Future<PublishResponse> submit(Publish publish) {
-        Log.i(TAG, "PUBLISH submitted to node for execution: " + publish);
-        return Node.getInstance().mRequestExecutor.submit(publish);
+    public Future<PublishResponse> submit(final Publish publish) {
+        Log.i(TAG, "PUBLISH submitted for execution: " + publish);
+
+        // Wrap the Publish in a Callable
+        Callable<PublishResponse> task = new Callable<PublishResponse>() {
+            @Override
+            public PublishResponse call() {
+                return mPublishController.perform(publish);
+            }
+        };
+
+        // Submit the Callable to the Node's ExecutorService
+        return mRequestExecutor.submit(task);
     }
 
-    public Future<GetResponse> submit(Get get) {
-        Log.i(TAG, "GET submitted to node for execution: " + get);
-        return Node.getInstance().mRequestExecutor.submit(get);
+    public Future<GetResponse> submit(final Get get) {
+        Log.i(TAG, "GET submitted for execution: " + get);
+
+        // Wrap the Get in a Callable
+        Callable<GetResponse> task = new Callable<GetResponse>() {
+            @Override
+            public GetResponse call() {
+                return mGetController.perform(get);
+            }
+        };
+
+        // Submit the Callable to the Node's ExecutorService
+        return mRequestExecutor.submit(task);
     }
 
-    public Future<SearchResponse> submit(Search search) {
-        Log.i(TAG, "SEARCH submitted to node for execution: " + search);
-        return Node.getInstance().mRequestExecutor.submit(search);
+    public Future<SearchResponse> submit(final Search search) {
+        Log.i(TAG, "GET submitted for execution: " + search);
+
+        // Wrap the Search in a Callable
+        Callable<SearchResponse> task = new Callable<SearchResponse>() {
+            @Override
+            public SearchResponse call() {
+                return mSearchController.perform(search);
+            }
+        };
+
+        // Submit the Callable to the Node's ExecutorService
+        return mRequestExecutor.submit(task);
     }
 
-    @Override
-    public PublishResponse perform(Publish publish) {
-        return mPublishController.perform(publish);
-    }
-
-    @Override
-    public GetResponse perform(Get get) {
-        return mGetController.perform(get);
-    }
-
-    @Override
-    public SearchResponse perform(Search search) {
-        return mSearchController.perform(search);
-    }
+//    @Override
+//    public PublishResponse perform(Publish publish) {
+//        return mPublishController.perform(publish);
+//    }
+//
+//    @Override
+//    public GetResponse perform(Get get) {
+//        return mGetController.perform(get);
+//    }
+//
+//    @Override
+//    public SearchResponse perform(Search search) {
+//        return mSearchController.perform(search);
+//    }
 
     public void setApiController(ApiController apiController) {
         mApiController = apiController;

@@ -17,6 +17,7 @@ import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfUtils;
+import android.netinf.node.Node;
 import android.netinf.node.get.Get;
 import android.netinf.node.get.GetResponse;
 import android.netinf.node.publish.Publish;
@@ -84,10 +85,14 @@ public class NetInfActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                // Publish publish = new Publish.Builder(null, NetInfUtils.newMessageId(), getNdo1()).build();
-                Publish publish = new Publish.Builder(null, getNdo1()).fullPut().build();
-                PublishResponse response = publish.call();
-                Log.d(TAG, "PUBLISH resulted in status = " + response.getStatus());
+                try {
+                    // Publish publish = new Publish.Builder(null, NetInfUtils.newMessageId(), getNdo1()).build();
+                    Publish publish = new Publish.Builder(null, getNdo1()).fullPut().build();
+                    PublishResponse response = Node.getInstance().submit(publish).get();
+                    Log.d(TAG, "PUBLISH resulted in status = " + response.getStatus());
+                } catch (Throwable e) {
+                    Log.wtf(TAG, "PUBLISH failed", e);
+                }
             }
         }).start();
 
@@ -100,9 +105,13 @@ public class NetInfActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Get get = new Get.Builder(null, getNdo1()).build();
-                GetResponse response = get.call();
-                Log.d(TAG, "GET resulted in status = " + response.getStatus() + ", ndo = " + response.getNdo());
+                try {
+                    Get get = new Get.Builder(null, getNdo1()).build();
+                    GetResponse response = Node.getInstance().submit(get).get();
+                    Log.d(TAG, "GET resulted in status = " + response.getStatus() + ", ndo = " + response.getNdo());
+                } catch (Throwable e) {
+                    Log.wtf(TAG, "GET failed", e);
+                }
             }
         }).start();
 

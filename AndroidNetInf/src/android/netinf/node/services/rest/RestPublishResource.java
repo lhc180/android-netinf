@@ -3,6 +3,7 @@ package android.netinf.node.services.rest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
@@ -14,6 +15,7 @@ import android.netinf.common.Locator;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
+import android.netinf.node.Node;
 import android.netinf.node.publish.Publish;
 import android.netinf.node.publish.PublishResponse;
 import android.util.Log;
@@ -77,14 +79,22 @@ public class RestPublishResource extends ServerResource {
         Log.i(TAG, "REST API received PUBLISH: " + publishBuilder);
 
         // Publish
-        PublishResponse response = publishBuilder.build().call();
+        try {
+            Publish publish = publishBuilder.build();
+            PublishResponse response = Node.getInstance().submit(publish).get();
 
-        if (response.getStatus().isSuccess()) {
-            setStatus(Status.SUCCESS_CREATED);
-        } else {
-            setStatus(Status.SERVER_ERROR_INTERNAL);
+            if (response.getStatus().isSuccess()) {
+                setStatus(Status.SUCCESS_CREATED);
+                return null;
+            }
+
+        } catch (InterruptedException e) {
+            Log.e(TAG, "PUBLISH failed", e);
+        } catch (ExecutionException e) {
+            Log.e(TAG, "PUBLISH failed", e);
         }
 
+        setStatus(Status.SERVER_ERROR_INTERNAL);
         return null;
 
     }

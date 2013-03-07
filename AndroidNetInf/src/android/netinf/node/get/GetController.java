@@ -43,6 +43,7 @@ public class GetController implements GetService {
         Get get = new Get.Builder(incomingGet).consumeHop().build();
 
         // Check local services
+        Log.i(TAG, "Local GET of " + get);
         for (GetService getService : mLocalGetServices.get(get.getSource())) {
             GetResponse response = getService.perform(get);
             if (response.getStatus().isSuccess()) {
@@ -53,16 +54,17 @@ public class GetController implements GetService {
 
         // Check other services
         if (get.getHopLimit() > 0) {
+            Log.i(TAG, "Remote GET of " + get);
             for (GetService getService : mGetServices.get(get.getSource())) {
                 GetResponse response = getService.perform(get);
                 if (response.getStatus().isSuccess()) {
-                    Log.i(TAG, "GET produced an NDO");
+                    Log.i(TAG, "GET of " + get + " done. STATUS " + response.getStatus());
                     return new GetResponse(get, NetInfStatus.OK, response.getNdo());
                 }
             }
         }
 
-        Log.i(TAG, "GET did not produce an NDO");
+        Log.i(TAG, "GET of " + get + " failed. STATUS " + NetInfStatus.FAILED);
         return new GetResponse(get, NetInfStatus.FAILED);
     }
 

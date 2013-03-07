@@ -135,7 +135,7 @@ public class BluetoothDiscovery implements Runnable {
     public Set<BluetoothDevice> getBluetoothDevices() {
         // TODO DEBUG, return bonded devices
         for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
-            Log.d(TAG, "bonded: " + device.getName());
+            Log.d(TAG, "(Debug) Returning bonded device(s): " + device.getName());
         }
         return BluetoothAdapter.getDefaultAdapter().getBondedDevices();
 

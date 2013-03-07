@@ -3,10 +3,9 @@ package android.netinf.node.publish;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfUtils;
 import android.netinf.common.Request;
-import android.netinf.node.Node;
 import android.netinf.node.api.Api;
 
-public class Publish extends Request<PublishResponse> {
+public class Publish extends Request {
 
     public static class Builder {
 
@@ -58,11 +57,6 @@ public class Publish extends Request<PublishResponse> {
 
     public boolean isFullPut() {
         return mFullPut;
-    }
-
-    @Override
-    public PublishResponse call() {
-        return Node.getInstance().perform(this);
     }
 
     @Override

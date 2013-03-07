@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
@@ -18,6 +19,7 @@ import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfStatus;
 import android.netinf.common.NetInfUtils;
+import android.netinf.node.Node;
 import android.netinf.node.get.Get;
 import android.netinf.node.get.GetResponse;
 import android.netinf.node.publish.Publish;
@@ -66,6 +68,10 @@ public class BluetoothServer implements Runnable {
                 Log.e(TAG, "Failed to handle request", e);
             } catch (NetInfException e) {
                 Log.e(TAG, "Failed to handle request", e);
+            } catch (InterruptedException e) {
+                Log.e(TAG, "Failed to handle request", e);
+            } catch (ExecutionException e) {
+                Log.e(TAG, "Failed to handle request", e);
             } finally {
                 IOUtils.closeQuietly(in);
                 IOUtils.closeQuietly(out);
@@ -77,12 +83,11 @@ public class BluetoothServer implements Runnable {
     }
 
     private void handleRequest(DataInputStream in, DataOutputStream out)
-            throws IOException, JSONException, NetInfException {
+            throws IOException, JSONException, NetInfException, InterruptedException, ExecutionException {
 
         Log.v(TAG, "handleRequest()");
 
         JSONObject request = BluetoothCommon.readJson(in);
-        Log.d(TAG, "request = " + request);
         if (request.getString("type").equals("publish")) {
             handlePublish(in, out, request);
         } else if (request.getString("type").equals("get")) {
@@ -96,20 +101,22 @@ public class BluetoothServer implements Runnable {
     }
 
     private void handlePublish(DataInputStream in, DataOutputStream out, JSONObject publishJo)
-            throws NetInfException, JSONException, IOException {
+            throws NetInfException, JSONException, IOException, InterruptedException, ExecutionException {
 
         Log.v(TAG, "handlePublish()");
         Ndo ndo = NetInfUtils.toNdo(publishJo);
         Log.i(TAG, "Bluetooth API received PUBLISH: " + ndo.getUri());
 
         // Create and execute publish
-        Publish.Builder builder = new Publish.Builder(mApi, ndo).id(publishJo.getString("msgid")).hoplimit(publishJo.getInt("hoplimit"));
+        Publish.Builder publishBuilder = new Publish.Builder(mApi, ndo).id(publishJo.getString("msgid")).hoplimit(publishJo.getInt("hoplimit"));
         if (publishJo.getBoolean("octets") == true) {
             byte[] octets = BluetoothCommon.readFile(in);
             ndo.cache(octets);
-            builder.fullPut();
+            publishBuilder.fullPut();
         }
-        PublishResponse response = builder.build().call();
+
+        Publish publish = publishBuilder.build();
+        PublishResponse response = Node.getInstance().submit(publish).get();
 
         // Create publish response
         JSONObject responseJo = new JSONObject();
@@ -120,7 +127,7 @@ public class BluetoothServer implements Runnable {
     }
 
     private void handleGet(DataInputStream in, DataOutputStream out, JSONObject jo)
-            throws NetInfException, JSONException, IOException {
+            throws NetInfException, JSONException, IOException, InterruptedException, ExecutionException {
 
         Log.v(TAG, "handleGet()");
         Ndo ndo = NetInfUtils.toNdo(jo);
@@ -128,7 +135,7 @@ public class BluetoothServer implements Runnable {
 
         // Create and execute get
         Get get = new Get.Builder(mApi, ndo).id(jo.getString("msgid")).hoplimit(jo.getInt("hoplimit")).build();
-        GetResponse response = get.call();
+        GetResponse response = Node.getInstance().submit(get).get();
 
         // Create get response
         JSONObject responseJo = new JSONObject();

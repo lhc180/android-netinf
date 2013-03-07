@@ -1,10 +1,8 @@
 package android.netinf.common;
 
-import java.util.concurrent.Callable;
-
 import android.netinf.node.api.Api;
 
-public abstract class Request<T> implements Callable<T> {
+public abstract class Request {
 
     private Api mSource;
     private String mId;

@@ -94,7 +94,7 @@ public class BluetoothCommon {
 
     public static void write(JSONObject jo, DataOutputStream bluetoothOut) throws IOException {
         Log.v(TAG, "write()");
-        Log.d(TAG, jo.toString());
+        Log.d(TAG, "Wrote: " + jo.toString());
         byte[] buffer = jo.toString().getBytes("UTF-8");
         bluetoothOut.writeInt(buffer.length);
         bluetoothOut.write(buffer);
@@ -122,7 +122,7 @@ public class BluetoothCommon {
         Log.v(TAG, "readJson()");
         byte[] buffer = read(bluetoothIn);
         String json = new String(buffer, "UTF-8");
-        Log.d(TAG, new JSONObject(json).toString());
+        Log.d(TAG, "Read: " + new JSONObject(json).toString());
         return new JSONObject(json);
     }
 

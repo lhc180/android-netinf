@@ -5,14 +5,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import android.netinf.common.Ndo;
 import android.netinf.common.NetInfUtils;
 import android.netinf.common.Request;
-import android.netinf.node.Node;
 import android.netinf.node.api.Api;
 
 
-public class Search extends Request<SearchResponse> {
+public class Search extends Request {
 
     public static class Builder {
 
@@ -21,7 +19,6 @@ public class Search extends Request<SearchResponse> {
         private int mHopLimit = 2;
         private long mTimeout = 1000;
         private Set<String> mTokens = new HashSet<String>();
-        private Set<Ndo> mResults = new HashSet<Ndo>();
 
         public Builder(Search search) {
             mSource = search.getSource();
@@ -29,7 +26,6 @@ public class Search extends Request<SearchResponse> {
             mHopLimit = search.getHopLimit();
             mTimeout = search.getTimeout();
             mTokens = search.getTokens();
-            mResults = search.getResults();
         }
 
         public Builder(Api api, String id) {
@@ -52,13 +48,11 @@ public class Search extends Request<SearchResponse> {
 
     private final Set<String> mTokens;
     private final long mTimeout;
-    private final Set<Ndo> mResults;
 
     private Search(Builder builder) {
         super(builder.mSource, builder.mId, builder.mHopLimit);
         mTokens = Collections.unmodifiableSet(builder.mTokens);
         mTimeout = builder.mTimeout;
-        mResults = builder.mResults;
     }
 
     public long getTimeout() {
@@ -67,15 +61,6 @@ public class Search extends Request<SearchResponse> {
 
     public Set<String> getTokens() {
         return mTokens;
-    }
-
-    public Set<Ndo> getResults() {
-        return mResults;
-    }
-
-    @Override
-    public SearchResponse call() {
-        return Node.getInstance().perform(this);
     }
 
     @Override

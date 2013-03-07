@@ -3,6 +3,7 @@ package android.netinf.node.services.rest;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,6 +16,7 @@ import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfUtils;
+import android.netinf.node.Node;
 import android.netinf.node.search.Search;
 import android.netinf.node.search.SearchResponse;
 import android.util.Log;
@@ -45,9 +47,9 @@ public class RestSearchResource extends ServerResource {
         Search search = new Search.Builder(RestApi.getInstance(), NetInfUtils.newId()).tokens(tokens).timeout(TIMEOUT).build();
         Log.i(TAG, "REST API received SEARCH: " + search);
 
-        SearchResponse response = search.call();
-
         try {
+            SearchResponse response = Node.getInstance().submit(search).get();
+
             JSONObject json = new JSONObject();
             JSONArray results = new JSONArray();
             json.put("results", results);
@@ -59,11 +61,17 @@ public class RestSearchResource extends ServerResource {
             }
             setStatus(Status.SUCCESS_OK);
             return new StringRepresentation(json.toString());
+
         } catch (JSONException e) {
-            Log.wtf(TAG, "Failed to create search response JSON");
-            setStatus(Status.SERVER_ERROR_INTERNAL);
-            return null;
+            Log.wtf(TAG, "Failed to create search response JSON", e);
+        } catch (InterruptedException e) {
+            Log.wtf(TAG, "SEARCH failed", e);
+        } catch (ExecutionException e) {
+            Log.wtf(TAG, "SEARCH failed", e);
         }
+
+        setStatus(Status.SERVER_ERROR_INTERNAL);
+        return null;
 
     }
 

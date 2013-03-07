@@ -3,10 +3,9 @@ package android.netinf.node.get;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfUtils;
 import android.netinf.common.Request;
-import android.netinf.node.Node;
 import android.netinf.node.api.Api;
 
-public class Get extends Request<GetResponse> {
+public class Get extends Request {
 
     public static class Builder {
 
@@ -49,11 +48,6 @@ public class Get extends Request<GetResponse> {
 
     public Ndo getNdo() {
         return mNdo;
-    }
-
-    @Override
-    public GetResponse call() {
-        return Node.getInstance().perform(this);
     }
 
     @Override

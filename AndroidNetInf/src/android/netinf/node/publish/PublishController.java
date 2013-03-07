@@ -47,12 +47,14 @@ public class PublishController implements PublishService {
         List<PublishResponse> responses = new LinkedList<PublishResponse>();
 
         // Check local services
+        Log.i(TAG, "Local PUBLISH of " + publish);
         for (PublishService publishService : mLocalPublishServices.get(publish.getSource())) {
             responses.add(publishService.perform(publish));
         }
 
         // Check other services
         if (publish.getHopLimit() > 0) {
+            Log.i(TAG, "Remote PUBLISH of " + publish);
             for (PublishService publishService : mPublishServices.get(publish.getSource())) {
                 responses.add(publishService.perform(publish));
             }
@@ -61,12 +63,12 @@ public class PublishController implements PublishService {
         // Decide aggregated status
         for (PublishResponse response : responses) {
             if (response.getStatus().isSuccess()) {
-                Log.i(TAG, "PUBLISH succeeded at least once");
+                Log.i(TAG, "PUBLISH of " + publish + " done. STATUS " + response.getStatus());
                 return new PublishResponse(publish, NetInfStatus.OK);
             }
         }
 
-        Log.i(TAG, "PUBLISH failed to all");
+        Log.i(TAG, "PUBLISH of " + publish + " failed. STATUS " + NetInfStatus.FAILED);
         return new PublishResponse(publish, NetInfStatus.FAILED);
 
     }

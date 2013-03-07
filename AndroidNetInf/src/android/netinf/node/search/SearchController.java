@@ -44,20 +44,22 @@ public class SearchController implements SearchService {
         final Search search = new Search.Builder(incomingSearch).consumeHop().build();
 
         // Get search services to be used
+        Log.i(TAG, "Local SEARCH of " + search);
         Set<SearchService> searchServices = new LinkedHashSet<SearchService>(mLocalSearchServices.get(search.getSource()));
         if (search.getHopLimit() > 0) {
+            Log.i(TAG, "Remote SEARCH of " + search);
             searchServices.addAll(mSearchServices.get(search.getSource()));
         }
 
         final CountDownLatch pendingSearches = new CountDownLatch(searchServices.size());
-        final SearchResponse.Builder builder = new SearchResponse.Builder(search);
+        final SearchResponse.Builder searchResponseBuilder = new SearchResponse.Builder(search);
 
         for (final SearchService searchService : searchServices) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     SearchResponse response = searchService.perform(search);
-                    builder.addResults(response.getResults());
+                    searchResponseBuilder.addResults(response.getResults());
                     pendingSearches.countDown();
                 }
             }).start();
@@ -69,9 +71,9 @@ public class SearchController implements SearchService {
             Log.i(TAG, "SEARCH interrupted");
         }
 
-        Log.i(TAG, "SEARCH produced " + search.getResults().size() + " NDO(s)");
-
-        return builder.build();
+        SearchResponse response = searchResponseBuilder.build();
+        Log.i(TAG, "SEARCH produced " + response.getResults().size() + " NDO(s)");
+        return response;
 
     }
 
