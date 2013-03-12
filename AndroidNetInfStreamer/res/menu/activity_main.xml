@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_record"
+          android:icon="@drawable/ic_action_video"
+          android:title="@string/menu_record"
+          android:showAsAction="ifRoom|withText" />
+        <item android:id="@+id/menu_play"
+          android:icon="@drawable/av_play"
+          android:title="@string/menu_play"
+          android:showAsAction="ifRoom|withText" />
+</menu>

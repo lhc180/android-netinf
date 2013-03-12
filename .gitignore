@@ -8,3 +8,6 @@ AndroidNetInf/bin/
 AndroidNetInf/gen/
 AndroidNetInf/local.properties
 
+AndroidNetInfStreamer/bin/
+AndroidNetInfStreamer/gen/
+AndroidNetInfStreamer/local.properties
