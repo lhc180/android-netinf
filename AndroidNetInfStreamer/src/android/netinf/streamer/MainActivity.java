@@ -13,11 +13,8 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
-import android.media.MediaRecorder;
-import android.net.LocalServerSocket;
-import android.net.LocalSocket;
-import android.net.LocalSocketAddress;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -27,30 +24,30 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SurfaceView;
 
+/*
+ * Useful links
+ * http://developer.android.com/guide/topics/media/camera.html#capture-video
+ */
 public class MainActivity extends Activity {
 
     public static final String TAG = MainActivity.class.getSimpleName();
 
-    private File mChunkFolder = new File(Environment.getExternalStorageDirectory(), "Chunks");
-
-    private MediaRecorder mMediaRecorder;
+    /** Camera used to record the stream, not null implies recording. */
     private Camera mCamera;
+    /** Surface used to show the preview of the stream. */
     private SurfaceView mSurface;
-
-    private ExecutorService mExecutor = Executors.newFixedThreadPool(2);
-//    private ChunkGenerator mChunkGenerator;
+    /** Executor to run the Encoder. */
+    private ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+    /** Encoder used to encode the video. */
     private Encoder mEncoder;
+    /** A callback handed to the Camera that receives each frame and encodes it using the Encoder. */
     private EncodingPreviewCallback mEncodingCallback;
-    private LocalServerSocket mServer;
-    private LocalSocket mSender;
-    private LocalSocket mReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.v(TAG, "onCreate()");
         setContentView(R.layout.activity_main);
-
     }
 
     @Override
@@ -64,6 +61,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         Log.v(TAG, "onOptionsItemSelected()");
+        // Switch on menu item pressed.
         switch (item.getItemId()) {
             case R.id.menu_record:
                 delayedToggleRecord();
@@ -77,20 +75,20 @@ public class MainActivity extends Activity {
     }
 
     public void togglePlay() {
+        Log.v(TAG, "togglePlay()");
 
-        File joined = null;
+        File chunkFolder = new File(Environment.getExternalStorageDirectory(), "Chunks");
+        File file = null;
+
         FileOutputStream out = null;
         try {
-
-            joined = new File(mChunkFolder, "joined.h264");
-            FileUtils.deleteQuietly(joined);
-
-            out = FileUtils.openOutputStream(joined);
-            FileUtils.copyFile(new File(mChunkFolder, "00000.h264"), out);
-            FileUtils.copyFile(new File(mChunkFolder, "00003.h264"), out);
-            FileUtils.copyFile(new File(mChunkFolder, "00001.h264"), out);
-            FileUtils.copyFile(new File(mChunkFolder, "00002.h264"), out);
-
+            // Delete old temp file
+            file = new File(chunkFolder, "joined.h264");
+            FileUtils.deleteQuietly(file);
+            // Create new temp file
+            out = FileUtils.openOutputStream(file);
+            FileUtils.copyFile(new File(chunkFolder, "00000.h264"), out);
+            FileUtils.copyFile(new File(chunkFolder, "00001.h264"), out);
             out.flush();
         } catch (Exception e) {
             Log.e(TAG, "Failed to create joined h264 file", e);
@@ -98,30 +96,18 @@ public class MainActivity extends Activity {
             IOUtils.closeQuietly(out);
         }
 
-//        File file = new File(mChunkFolder, "all.h264");
-//        Log.d(TAG, "Playing " + file.getAbsolutePath() + ", " + file.getTotalSpace() + " bytes");
-        Log.d(TAG, "Playing " + joined.getAbsolutePath() + ", " + joined.getTotalSpace() + " bytes");
+
+        Log.d(TAG, "Playing " + file.getAbsolutePath() + ", " + file.length() + " bytes");
         Intent vlc = new Intent();
         vlc.setAction(android.content.Intent.ACTION_VIEW);
-        vlc.setDataAndType(Uri.fromFile(joined), "video/*");
+        vlc.setDataAndType(Uri.fromFile(file), "video/*");
         startActivity(vlc);
-
-//        Log.v(TAG, "togglePlay()");
-//        setContentView(R.layout.play);
-////        try {
-//            VideoView videoView = (VideoView) findViewById(R.id.videoView1);
-//            videoView.setVideoPath(mChunkFolder.getAbsolutePath() + "/00002");
-//            videoView.setMediaController(new MediaController(this));
-//            videoView.requestFocus();
-//            videoView.start();
-////        } catch (IOException e) {
-////            Log.e(TAG, "togglePlay() failed", e);
-////        }
     }
 
     public void delayedToggleRecord() {
         Log.v(TAG, "delayedToggleRecord()");
         setContentView(R.layout.activity_main);
+        // Ugly fix: a short delay before toggling the camera, otherwise it might not be ready
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -132,7 +118,6 @@ public class MainActivity extends Activity {
 
     public void toggleRecord() {
         Log.v(TAG, "toggleRecord()");
-
         if (mCamera == null) {
             try {
                 startRecording();
@@ -146,88 +131,46 @@ public class MainActivity extends Activity {
 
     }
 
-    // http://developer.android.com/guide/topics/media/camera.html#capture-video
+    //
     public void startRecording() throws IOException {
         Log.v(TAG, "startRecording()");
 
-        // Setup local sockets
-        mServer = new LocalServerSocket("com.example.recorder");
-        mSender = new LocalSocket();
-        mSender.connect(new LocalSocketAddress("com.example.recorder"));
-        mReceiver = mServer.accept();
-        closeQuietly(mServer);
-
-        // Setup chunk generator
-//        mChunkGenerator = new ChunkGenerator(mReceiver);
-//        mVideoExtractor = new VideoExtractor(mReceiver.getFileDescriptor());
-//        mExecutor.execute(mChunkGenerator);
-//      mExecutor.execute(mVideoExtractor);
-
+        // Get surface and camera
         mSurface = (SurfaceView) findViewById(R.id.surfaceView1);
-
-        Log.d(TAG, "mSurface = " + mSurface);
-        Log.d(TAG, "getHolder() = " + mSurface.getHolder());
-        Log.d(TAG, "getSurface() = " + mSurface.getHolder().getSurface());
-
         mCamera = Camera.open();                                                                // 1
 
-        // Extra settings
+        // Log supported parameters
         List<Camera.Size> sizes = mCamera.getParameters().getSupportedPreviewSizes();
         Log.d(TAG, "Supported preview sizes:");
         for (Camera.Size size : sizes) {
             Log.d(TAG, size.width + "x" + size.height);
         }
         List<int[]> ranges = mCamera.getParameters().getSupportedPreviewFpsRange();
-        Log.d(TAG, "Supported FPS ranges:");
+        Log.d(TAG, "Supported preview FPS ranges:");
         for (int[] range : ranges) {
             Log.d(TAG, ArrayUtils.toString(range));
         }
 
+        // Set preview parameters
         mCamera.setDisplayOrientation(90);
         Camera.Parameters parameters = mCamera.getParameters();
-//        parameters.setPreviewFormat(ImageFormat.YV12);
-//        parameters.setPictureSize(640, 480);              // Doesn't work?
+        parameters.setPreviewFormat(ImageFormat.YV12);
+//        parameters.setPreviewFormat(ImageFormat.NV21);
         parameters.setPreviewSize(320, 240);
         parameters.setPreviewFpsRange(15000, 15000);
-//        parameters.setPreviewFpsRange(30000, 30000);
-//        parameters.
         mCamera.setParameters(parameters);
 
+        Log.d(TAG, "Supported preview formats: " + ArrayUtils.toString(mCamera.getParameters().getSupportedPreviewFormats().toArray()));
+        Log.d(TAG, "Preview format is: " + mCamera.getParameters().getPreviewFormat());
+
+        // Setup Encoder and the per frame callback
         mEncoder = new Encoder();
         mEncodingCallback = new EncodingPreviewCallback(mCamera, mEncoder);
-//        mChunkGenerator = new ChunkGenerator(mEncoder.getInputStream());
         mExecutor.execute(mEncoder);
-//        mExecutor.execute(mChunkGenerator);
         mCamera.setPreviewCallbackWithBuffer(mEncodingCallback);
         mCamera.setPreviewDisplay(mSurface.getHolder());                                        // 2
         mCamera.startPreview();                                                                 // 3
-
-
-
         // Unlocking the camera causes onPreviewFrame() to stop getting called
-//        mCamera.unlock();                                                                       // 4a
-
-//        mMediaRecorder = new MediaRecorder();
-//        mMediaRecorder.setCamera(mCamera);                                                      // 4b1
-////        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);                     // 4b2
-//        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);                        // 4b3
-////        mMediaRecorder.setOutputFormat(8);                                                      // 4b4 i
-////        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);                                                      // 4b4 i
-//        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);                                                      // 4b4 i
-////        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);                         // 4b4 ii
-//        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);                        // 4b4 iii
-////        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H263);                        // 4b4 iii
-////        mMediaRecorder.setOutputFile(mFile.getCanonicalPath());                                 // 4b5
-////        mMediaRecorder.setOutputFile(mSender.getFileDescriptor());                              // 4b5
-//        mMediaRecorder.setOutputFile(Environment.getExternalStorageDirectory() + "/chunk");                              // 4b5
-//        mMediaRecorder.setPreviewDisplay(mSurface.getHolder().getSurface());                    // 4b6
-////        mMediaRecorder.setVideoSize(480, 360);                                                  // Extra
-//        mMediaRecorder.setVideoEncodingBitRate(500000);
-////        mMediaRecorder.setAudioEncodingBitRate(128000);
-//        mMediaRecorder.setVideoFrameRate(30);
-//        mMediaRecorder.setMaxDuration(0);
-//        mMediaRecorder.prepare();                                                               // 4c
-//        mMediaRecorder.start();                                                                 // 4d
 
     }
 
@@ -235,13 +178,6 @@ public class MainActivity extends Activity {
         Log.v(TAG, "stopRecording()");
 
         mCamera.setPreviewCallbackWithBuffer(null);
-
-        if (mMediaRecorder != null) {
-            Log.i(TAG, "Stopping MediaRecorder");
-            mMediaRecorder.stop();                                                                  // 5a
-            mMediaRecorder.reset();                                                                 // 5b
-            mMediaRecorder.release();                                                               // 5c
-        }
 
         if (mCamera != null) {
             Log.i(TAG, "Stopping Camera");
@@ -255,29 +191,9 @@ public class MainActivity extends Activity {
             mEncoder.cancel();
         }
 
-//        if (mChunkGenerator != null) {
-//            Log.i(TAG, "Stopping ChunkGenerator");
-//            mChunkGenerator.cancel();
-//        }
-
-        mEncoder = null;
-//        mChunkGenerator = null;
-        mMediaRecorder = null;
         mCamera = null;
+        mEncoder = null;
 
-        closeQuietly(mSender);
-        closeQuietly(mReceiver);
-
-    }
-
-    private void closeQuietly(LocalServerSocket socket) {
-        if (socket == null) { return; }
-        try { socket.close(); } catch (IOException e) { }
-    }
-
-    private void closeQuietly(LocalSocket socket) {
-        if (socket == null) { return; }
-        try { socket.close(); } catch (IOException e) { }
     }
 
 }

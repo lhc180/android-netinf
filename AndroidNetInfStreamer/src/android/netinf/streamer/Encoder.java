@@ -10,11 +10,13 @@ import org.apache.commons.collections.Buffer;
 import org.apache.commons.collections.BufferUtils;
 import org.apache.commons.collections.buffer.UnboundedFifoBuffer;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
+import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Environment;
 import android.util.Log;
@@ -40,60 +42,68 @@ public class Encoder implements Runnable {
     public static final int FILE_NAME_LENGTH = 5;
     public static final int BUFFER_NUM = 20;
     public static final int BUFFER_SIZE = 115200; // From mCodec's buffer size
-    public static final int MIN_CHUNK_SIZE = 200 * 1024; // 200 kB
+    public static final int MIN_CHUNK_SIZE = 10000000;//200 * 1024; // 200 kB
 
+    /** MediaCodec that encodes the frames into a h264 byte stream. */
     private MediaCodec mCodec;
-    //    private PipedInputStream mPipeIn;
-    //    private PipedOutputStream mPipeOut;
+    /** Buffer keeping track of unencoded frame, it should not grow if things are fast enough. */
     private Buffer mFrameFifo; //<byte[]>
     private boolean mStopped;
 
+    /** OutputStream to the current chunk. */
     private FileOutputStream mChunkOut;
+    /** Current chunk number. */
     private int mChunkNumber = 0;
+    /** Byte written to current chunk so far. */
     private int mChunkSize = 0;
 
     public Encoder() {
 
+        // Print Supported Formats
+        for (int i = 0; i < MediaCodecList.getCodecCount(); i++) {
+            MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
+            for (String type : info.getSupportedTypes()) {
+                if (type.equals("video/avc")) {
+                    MediaCodecInfo.CodecCapabilities c = info.getCapabilitiesForType(type);
+                    Log.d(TAG, "Name: " + info.getName());
+                    Log.d(TAG, "Supports Type: " + type);
+                    Log.d(TAG, "Color Formats: " + ArrayUtils.toString(c.colorFormats));
+                }
+            }
+        }
+
         mFrameFifo = BufferUtils.blockingBuffer(new UnboundedFifoBuffer());
 
-        //        try {
-        //             Setup encoding queue
-        //            mPipeIn = new PipedInputStream(1024*1024);
-        //            mPipeOut = new PipedOutputStream(mPipeIn);
-        //
-        //             Setup output file
-        //            File file = new File(Environment.getExternalStorageDirectory() + "/test.h264");
-        //            FileUtils.deleteQuietly(file);
-        //            mOutput = new BufferedOutputStream(FileUtils.openOutputStream(file));
-        //
-        //        } catch (IOException e) {
-        //            Log.e(TAG, "Failed to create piped streams", e);
-        //        }
-
-        // Print Supported Formats
-        //        for (int i = 0; i < MediaCodecList.getCodecCount(); i++) {
-        //            MediaCodecInfo info = MediaCodecList.getCodecInfoAt(i);
-        //            Log.d(TAG, "Name: " + info.getName());
-        //            for (String type : info.getSupportedTypes()) {
-        //                MediaCodecInfo.CodecCapabilities c = info.getCapabilitiesForType(type);
-        //                Log.d(TAG, "Supports Type: " + type);
-        //                Log.d(TAG, "Color Formats: " + ArrayUtils.toString(c.colorFormats));
-        ////                Log.d(TAG, "Profile Levels: " + c.profileLevels);
-        //            }
-        //        }
-
-        //        mCodec = MediaCodec.createEncoderByType("video/avc");
         mCodec = MediaCodec.createByCodecName("OMX.TI.DUCATI1.VIDEO.H264E");
         MediaFormat mediaFormat = MediaFormat.createVideoFormat("video/avc", 320, 240);
-        //      MediaFormat mediaFormat = MediaFormat.createVideoFormat("video/avc", 640, 480);
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 125000);
         mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 15);
-        //        mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar);
-        //        mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYCrYCb);
+        // mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar);
+        // mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYCrYCb);
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_TI_FormatYUV420PackedSemiPlanar);
+        // mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, 2130708361);
         mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 5);
         mCodec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         mCodec.start();
+    }
+
+    public byte[] YV12toYUV420PackedSemiPlanar(final byte[] input, final int width, final int height) {
+        /*
+         * COLOR_TI_FormatYUV420PackedSemiPlanar is NV12
+         * We convert by putting the corresponding U and V bytes together (interleaved).
+         */
+        byte[] output = new byte[input.length];
+
+        final int frameSize = width * height;
+        final int qFrameSize = frameSize/4;
+
+        System.arraycopy(input, 0, output, 0, frameSize); // Y
+
+        for (int i = 0; i < qFrameSize; i++) {
+            output[frameSize + i*2] = input[frameSize + i + qFrameSize]; // Cb (U)
+            output[frameSize + i*2 + 1] = input[frameSize + i]; // Cr (V)
+        }
+        return output;
     }
 
     // called from Camera.setPreviewCallbackWithBuffer(...) in other class
@@ -101,6 +111,7 @@ public class Encoder implements Runnable {
     public void queueForEncoding(byte[] frame) {
         Log.v(TAG, "queueForEncoding()");
         // Fake 30 fps by encoding every frame twice
+        frame = YV12toYUV420PackedSemiPlanar(frame, 320, 240);
         mFrameFifo.add(frame);
         mFrameFifo.add(frame);
     }
@@ -109,10 +120,10 @@ public class Encoder implements Runnable {
         mStopped = true;
     }
 
-    public void close() throws IOException {
+    public void close() {
         mCodec.stop();
         mCodec.release();
-        // TODO close the pipes
+        IOUtils.closeQuietly(mChunkOut);
     }
 
     @Override
@@ -128,22 +139,11 @@ public class Encoder implements Runnable {
             sendEncoderInput();
             handleEncoderOutput();
         }
+        close();
 
         Log.i(TAG, "Encoder stopped");
 
     }
-
-//    public void newChunk(byte[] data) {
-//
-//        try {
-//            File chunk = new File(CHUNK_FOLDER, StringUtils.leftPad(Integer.toString(mChunkNumber), FILE_NAME_LENGTH, "0"));
-//            FileUtils.deleteQuietly(chunk);
-//            FileUtils.writeByteArrayToFile(chunk, data);
-//        } catch (IOException e) {
-//            Log.e(TAG, "Failed to create chunk", e);
-//        }
-//
-//    }
 
     private void writePartialChunk(int oneByte) throws IOException {
         mChunkOut.write(oneByte);
@@ -184,7 +184,7 @@ public class Encoder implements Runnable {
             ByteBuffer[] outputBuffers = mCodec.getOutputBuffers();
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
 
-            // Dependant on how the video is encoded, we handle the two first encoded part differently
+            // Dependent on how the video is encoded, we handle the two first encoded part differently
             // First we put the SPS/PPS in the first part into its chunk one
             // These will always be needed and it seems like only one pair is generated
             // There will be some padding 0x00 in the second part which should be put into the first chunk as well
