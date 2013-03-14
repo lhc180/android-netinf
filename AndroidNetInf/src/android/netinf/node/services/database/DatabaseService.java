@@ -4,13 +4,13 @@ package android.netinf.node.services.database;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang.SerializationUtils;
+import org.apache.commons.lang3.SerializationUtils;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.netinf.NetInfApplication;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 import android.netinf.node.get.Get;
@@ -40,8 +40,8 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     private static final String COLUMN_HASH = "hash";
     private static final String COLUMN_NDO = "ndo";
 
-    public DatabaseService() {
-        super(NetInfApplication.getContext(), DATABASE_NAME, null, DATABASE_VERSION);
+    public DatabaseService(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
@@ -49,13 +49,18 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
         Log.v(TAG, "publish()");
         Log.i(TAG, "Database received PUBLISH: " + publish);
         Ndo ndo = publish.getNdo();
-        if (!contains(ndo)) {
-            insert(ndo);
-            Log.i(TAG,"Inserted new NDO into database");
-        } else {
-            // TODO merge with existing
-            Log.i(TAG,"NDO already in database");
+        // TODO Don't just overwrite
+        if (contains(ndo)) {
+            Log.d(TAG, "Deleted: "+delete(ndo));
         }
+        insert(ndo);
+        //if (!contains(ndo)) {
+        //    insert(ndo);
+        //    Log.i(TAG,"Inserted new NDO into database");
+        //} else {
+        //    // TODO merge with existing
+        //    Log.i(TAG,"NDO already in database");
+        //}
         Log.i(TAG, "PUBLISH to database succeeded");
         return new PublishResponse(publish, NetInfStatus.OK); // TODO check if actually inserted
     }
@@ -130,6 +135,16 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
         SQLiteDatabase db = getWritableDatabase();
         db.insert(TABLE_NDO, null, values);
         db.close();
+    }
+
+    private int delete(Ndo ndo) {
+        Log.v(TAG, "delete()");
+        SQLiteDatabase db = getWritableDatabase();
+        String whereClause = COLUMN_HASH_ALG + "=? AND " + COLUMN_HASH + "=?";
+        String[] whereArgs = new String[] {ndo.getAlgorithm(), ndo.getHash()};
+        int deleted = db.delete(TABLE_NDO, whereClause , whereArgs);
+        db.close();
+        return deleted;
     }
 
     @Override

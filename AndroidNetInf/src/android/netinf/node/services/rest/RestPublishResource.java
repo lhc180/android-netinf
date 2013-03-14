@@ -81,7 +81,7 @@ public class RestPublishResource extends ServerResource {
         // Publish
         try {
             Publish publish = publishBuilder.build();
-            PublishResponse response = Node.getInstance().submit(publish).get();
+            PublishResponse response = Node.submit(publish).get();
 
             if (response.getStatus().isSuccess()) {
                 setStatus(Status.SUCCESS_CREATED);

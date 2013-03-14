@@ -48,7 +48,7 @@ public class RestSearchResource extends ServerResource {
         Log.i(TAG, "REST API received SEARCH: " + search);
 
         try {
-            SearchResponse response = Node.getInstance().submit(search).get();
+            SearchResponse response = Node.submit(search).get();
 
             JSONObject json = new JSONObject();
             JSONArray results = new JSONArray();

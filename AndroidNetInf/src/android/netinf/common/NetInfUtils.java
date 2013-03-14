@@ -1,13 +1,19 @@
 package android.netinf.common;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.util.Base64;
 import android.util.Log;
 
 public class NetInfUtils {
@@ -99,6 +105,20 @@ public class NetInfUtils {
         return builder.build();
 
     }
+
+    public static String hash(String input, String algorithm) throws NoSuchAlgorithmException {
+        return hash(input.getBytes(), algorithm);
+    }
+
+    public static String hash(File input, String algorithm) throws NoSuchAlgorithmException, IOException {
+        return hash(FileUtils.readFileToByteArray(input), algorithm);
+    }
+
+    public static String hash(byte[] input, String algorithm) throws NoSuchAlgorithmException {
+        byte[] binaryHash = MessageDigest.getInstance(algorithm).digest(input);
+        return Base64.encodeToString(binaryHash, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
+    }
+
 
     //    public static JSONObject toJson(Ndo ndo) throws NetInfException {
     //        try {

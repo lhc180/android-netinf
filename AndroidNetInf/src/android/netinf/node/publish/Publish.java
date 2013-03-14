@@ -23,6 +23,10 @@ public class Publish extends Request {
             mFullPut = publish.isFullPut();
         }
 
+        public Builder(Ndo ndo) {
+            this(Api.JAVA, ndo);
+        }
+
         public Builder(Api api, Ndo ndo) {
             if (ndo == null) {
                 throw new NullPointerException("ndo must not be null");
@@ -61,7 +65,14 @@ public class Publish extends Request {
 
     @Override
     public String toString() {
-        return mNdo.getUri();
+        StringBuilder builder = new StringBuilder();
+        builder.append(mNdo.getUri());
+        if (isFullPut()) {
+            builder.append(" + ");
+            builder.append(mNdo.getOctets().length());
+            builder.append(" bytes");
+        }
+        return builder.toString();
     }
 
 }

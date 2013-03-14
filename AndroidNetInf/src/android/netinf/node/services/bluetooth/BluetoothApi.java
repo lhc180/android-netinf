@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -35,7 +36,7 @@ public class BluetoothApi implements Api {
     public void start() {
         Log.v(TAG, "start()");
         // TODO enable bluetooth discovery when relevant
-//        mDiscoveryExecutor.scheduleWithFixedDelay(mBluetoothDiscovery, 0, BluetoothDiscovery.DELAY, TimeUnit.MILLISECONDS);
+        mDiscoveryExecutor.scheduleWithFixedDelay(mBluetoothDiscovery, 0, BluetoothDiscovery.DELAY, TimeUnit.MILLISECONDS);
         for (UUID uuid : BluetoothCommon.UUIDS) {
             // TODO make certain UUIDs are restarted if thread crashes?
             mServerExecutor.execute(new BluetoothServer(this, uuid));

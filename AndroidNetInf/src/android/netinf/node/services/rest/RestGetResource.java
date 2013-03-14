@@ -48,7 +48,7 @@ public class RestGetResource extends ServerResource {
 
         // Get
         try {
-            GetResponse response = Node.getInstance().submit(get).get();
+            GetResponse response = Node.submit(get).get();
 
             // Get was performed but did not result in octets
             if (response.getStatus().isError() || !response.getNdo().isCached()) {

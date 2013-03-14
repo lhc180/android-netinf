@@ -1,7 +1,6 @@
 package android.netinf.streamer;
 
 import android.hardware.Camera;
-import android.util.Log;
 
 public class EncodingPreviewCallback implements Camera.PreviewCallback {
 
@@ -23,7 +22,7 @@ public class EncodingPreviewCallback implements Camera.PreviewCallback {
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        Log.v(TAG, "onPreviewFrame()");
+        // Log.v(TAG, "onPreviewFrame()");
         mEncoder.queueForEncoding(data);
         // Return the buffer, otherwise it will be unavailable for reuse
         camera.addCallbackBuffer(data);

@@ -116,7 +116,7 @@ public class BluetoothServer implements Runnable {
         }
 
         Publish publish = publishBuilder.build();
-        PublishResponse response = Node.getInstance().submit(publish).get();
+        PublishResponse response = Node.submit(publish).get();
 
         // Create publish response
         JSONObject responseJo = new JSONObject();
@@ -135,7 +135,7 @@ public class BluetoothServer implements Runnable {
 
         // Create and execute get
         Get get = new Get.Builder(mApi, ndo).id(jo.getString("msgid")).hoplimit(jo.getInt("hoplimit")).build();
-        GetResponse response = Node.getInstance().submit(get).get();
+        GetResponse response = Node.submit(get).get();
 
         // Create get response
         JSONObject responseJo = new JSONObject();

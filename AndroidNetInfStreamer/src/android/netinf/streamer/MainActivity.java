@@ -16,6 +16,7 @@ import android.content.Intent;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.net.Uri;
+import android.netinf.node.Node;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -47,6 +48,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.v(TAG, "onCreate()");
+
+        // Start the NetInf library
+        Node.start(getApplicationContext());
+
         setContentView(R.layout.activity_main);
     }
 
@@ -165,6 +170,7 @@ public class MainActivity extends Activity {
 
         // Setup Encoder and the per frame callback
         mEncoder = new Encoder();
+        mEncoder.setChunkPublisher(new Publisher());
         mEncodingCallback = new EncodingPreviewCallback(mCamera, mEncoder);
         mExecutor.execute(mEncoder);
         mCamera.setPreviewCallbackWithBuffer(mEncodingCallback);

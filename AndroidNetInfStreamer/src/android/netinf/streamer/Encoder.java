@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import org.apache.commons.collections.Buffer;
 import org.apache.commons.collections.BufferUtils;
@@ -33,6 +32,8 @@ import android.util.Log;
  * http://stackoverflow.com/questions/9618369/h-264-over-rtp-identify-sps-and-pps-frames
  * http://stackoverflow.com/questions/9618369/h-264-over-rtp-identify-sps-and-pps-frames
  * http://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-200305-S!!PDF-E&type=items
+ * http://stackoverflow.com/questions/13703596/mediacodec-and-camera-colorspaces-dont-match
+ * http://wiki.videolan.org/YUV#Semi-planar
  */
 public class Encoder implements Runnable {
 
@@ -42,20 +43,24 @@ public class Encoder implements Runnable {
     public static final int FILE_NAME_LENGTH = 5;
     public static final int BUFFER_NUM = 20;
     public static final int BUFFER_SIZE = 115200; // From mCodec's buffer size
-    public static final int MIN_CHUNK_SIZE = 10000000;//200 * 1024; // 200 kB
+    public static final int MIN_CHUNK_SIZE = 50 * 1024; // Min bytes per chunk, can only split on IDR-frames
 
     /** MediaCodec that encodes the frames into a h264 byte stream. */
     private MediaCodec mCodec;
-    /** Buffer keeping track of unencoded frame, it should not grow if things are fast enough. */
+    /** Buffer keeping track of uncoded frames, it should not grow if things are fast enough. */
     private Buffer mFrameFifo; //<byte[]>
     private boolean mStopped;
 
+    /** Current chunk file. */
+    private File mChunk;
     /** OutputStream to the current chunk. */
     private FileOutputStream mChunkOut;
     /** Current chunk number. */
     private int mChunkNumber = 0;
     /** Byte written to current chunk so far. */
     private int mChunkSize = 0;
+    /** Publisher to call when chunk done. */
+    private Publisher mPublisher;
 
     public Encoder() {
 
@@ -77,12 +82,15 @@ public class Encoder implements Runnable {
         mCodec = MediaCodec.createByCodecName("OMX.TI.DUCATI1.VIDEO.H264E");
         MediaFormat mediaFormat = MediaFormat.createVideoFormat("video/avc", 320, 240);
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 125000);
+        // FRAME_RATE is in reality 30, 15 tricks the encoder to insert more IDR-frames, for smaller min chunks
+        // I_FRAME_INTERVAL is 1/s but since FRAME_RATE is wrong we get double the amount, 2/s
         mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 15);
         // mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar);
         // mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYCrYCb);
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_TI_FormatYUV420PackedSemiPlanar);
         // mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, 2130708361);
-        mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 5);
+//        mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 5);
+        mediaFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
         mCodec.configure(mediaFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         mCodec.start();
     }
@@ -109,11 +117,14 @@ public class Encoder implements Runnable {
     // called from Camera.setPreviewCallbackWithBuffer(...) in other class
     @SuppressWarnings("unchecked")
     public void queueForEncoding(byte[] frame) {
-        Log.v(TAG, "queueForEncoding()");
+        // Log.v(TAG, "queueForEncoding()");
         // Fake 30 fps by encoding every frame twice
         frame = YV12toYUV420PackedSemiPlanar(frame, 320, 240);
         mFrameFifo.add(frame);
         mFrameFifo.add(frame);
+        if (mFrameFifo.size() > 30) {
+            Log.w(TAG, "More than 30 uncoded frames in queue, encoder is lagging behind!");
+        }
     }
 
     public void cancel() {
@@ -136,7 +147,9 @@ public class Encoder implements Runnable {
         sendEncoderInput();
         handleHeader();
         while (!mStopped) {
-            sendEncoderInput();
+            if (!mFrameFifo.isEmpty()) {
+                sendEncoderInput();
+            }
             handleEncoderOutput();
         }
         close();
@@ -159,16 +172,23 @@ public class Encoder implements Runnable {
         mChunkSize += byteCount;
     }
 
+    public void setChunkPublisher(Publisher publisher) {
+        mPublisher = publisher;
+    }
+
     private void nextChunk() {
         try {
             if (mChunkOut != null) {
                 mChunkOut.flush();
                 mChunkOut.close();
             }
-            File chunk = new File(CHUNK_FOLDER, StringUtils.leftPad(Integer.toString(mChunkNumber), FILE_NAME_LENGTH, "0") + ".h264");
-            Log.i(TAG, "New chunk: " + chunk.getAbsolutePath());
-            FileUtils.deleteQuietly(chunk);
-            mChunkOut = FileUtils.openOutputStream(chunk);
+            if (mChunk != null && mPublisher != null) {
+                mPublisher.publish(mChunk);
+            }
+            mChunk = new File(CHUNK_FOLDER, StringUtils.leftPad(Integer.toString(mChunkNumber), FILE_NAME_LENGTH, "0") + ".h264");
+            Log.i(TAG, "New chunk: " + mChunk.getAbsolutePath());
+            FileUtils.deleteQuietly(mChunk);
+            mChunkOut = FileUtils.openOutputStream(mChunk);
             mChunkSize = 0;
             mChunkNumber++;
         } catch (IOException e) {
@@ -177,6 +197,7 @@ public class Encoder implements Runnable {
     }
 
     private void handleHeader() {
+        // Log.v(TAG, "handleHeader");
 
         try {
 
@@ -229,6 +250,7 @@ public class Encoder implements Runnable {
     }
 
     private void handleEncoderOutput() {
+        // Log.v(TAG, "handleEncoderOutput");
 
         try {
 
@@ -250,12 +272,12 @@ public class Encoder implements Runnable {
                         && (((outData[4] & 0x1F) == 28 && (outData[5] & 0x1F) == 0x05) || ((outData[4] & 0x1F) == 0x05))) {
                     nextChunk();
                 }
-                Log.d(TAG, "Frame bytes: " + Arrays.toString(ArrayUtils.subarray(outData, 0, 10)) + "...");
-                Log.d(TAG, "Frame type: " + (((outData[4] & 0x1F) == 28) ?  (outData[5] & 0x1F) : (outData[4] & 0x1F)));
+                // Log.d(TAG, "Frame bytes: " + Arrays.toString(ArrayUtils.subarray(outData, 0, 10)) + "...");
+                // Log.d(TAG, "Frame type: " + (((outData[4] & 0x1F) == 28) ?  (outData[5] & 0x1F) : (outData[4] & 0x1F)));
 
                 writePartialChunk(outData, 0, outData.length);
 
-                Log.i("Encoder", outData.length + " bytes written");
+                // Log.i("Encoder", outData.length + " bytes written");
 
                 mCodec.releaseOutputBuffer(outputBufferIndex, false);
                 outputBufferIndex = mCodec.dequeueOutputBuffer(bufferInfo, 0);
@@ -267,18 +289,20 @@ public class Encoder implements Runnable {
     }
 
     private void sendEncoderInput() {
-        // Get a frame to encode;
-        byte[] frame = (byte[]) mFrameFifo.remove();
+        // Log.v(TAG, "sendEncoderInput");
 
-        // Get input buffer from encoder, insert the frame and hand it back
-        ByteBuffer[] inputBuffers = mCodec.getInputBuffers();
-        int inputBufferIndex = mCodec.dequeueInputBuffer(-1);
+        // Get input buffer from encoder, if we got one insert a frame and hand it back
+        int inputBufferIndex = mCodec.dequeueInputBuffer(1);
         if (inputBufferIndex >= 0) {
+            // Get a frame to encode and put it in the buffer;
+            byte[] frame = (byte[]) mFrameFifo.remove();
+
+            // Get buffers
+            ByteBuffer[] inputBuffers = mCodec.getInputBuffers();
             ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
             inputBuffer.clear();
             inputBuffer.put(frame);
             mCodec.queueInputBuffer(inputBufferIndex, 0, frame.length, 0, 0);
-            Log.d(TAG, "Frame queue length: " + mFrameFifo.size());
         }
     }
 
