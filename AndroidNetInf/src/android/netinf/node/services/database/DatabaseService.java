@@ -26,12 +26,13 @@ import android.util.Log;
 
 public class DatabaseService extends SQLiteOpenHelper implements PublishService, GetService, SearchService {
 
-    public static final String TAG = "DatabaseService";
+    public static final String TAG = DatabaseService.class.getSimpleName();
 
     private static final String DATABASE_NAME = "NdoDatabase.db3";
     private static final int DATABASE_VERSION = 1;
 
     private static final String TEXT = "TEXT";
+    private static final String INTEGER = "INTEGER";
     private static final String BLOB = "BLOB";
     private static final String NOT_NULL = "NOT NULL";
     private static final String PRIMARY_KEY = "PRIMARY KEY";

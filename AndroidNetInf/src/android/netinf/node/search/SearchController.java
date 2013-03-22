@@ -12,7 +12,7 @@ import android.util.Log;
 
 public class SearchController implements SearchService {
 
-    public static final String TAG = "SearchController";
+    public static final String TAG = SearchController.class.getSimpleName();
 
     private Map<Api, Set<SearchService>> mSearchServices;
     private Map<Api, Set<SearchService>> mLocalSearchServices;

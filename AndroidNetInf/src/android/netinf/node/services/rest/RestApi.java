@@ -12,7 +12,7 @@ import android.util.Log;
 
 public class RestApi implements Api {
 
-    public static final String TAG = "RestApi";
+    public static final String TAG = RestApi.class.getSimpleName();
 
     /** Singleton Instance. */
     private static final RestApi INSTANCE = new RestApi();

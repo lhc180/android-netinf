@@ -40,7 +40,7 @@ import android.util.Log;
 
 public class HttpGetService implements GetService {
 
-    public static final String TAG = "HttpGetService";
+    public static final String TAG = HttpGetService.class.getSimpleName();
 
     public static final int TIMEOUT = 2000;
 

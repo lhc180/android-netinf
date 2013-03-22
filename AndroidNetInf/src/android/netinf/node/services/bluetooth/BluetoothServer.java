@@ -24,12 +24,14 @@ import android.netinf.node.get.Get;
 import android.netinf.node.get.GetResponse;
 import android.netinf.node.publish.Publish;
 import android.netinf.node.publish.PublishResponse;
+import android.netinf.node.search.Search;
+import android.netinf.node.search.SearchResponse;
 import android.util.Log;
 
 
 public class BluetoothServer implements Runnable {
 
-    public static final String TAG = "BluetoothServer";
+    public static final String TAG = BluetoothServer.class.getSimpleName();
 
     private BluetoothApi mApi;
     private UUID mUuid;
@@ -92,6 +94,8 @@ public class BluetoothServer implements Runnable {
             handlePublish(in, out, request);
         } else if (request.getString("type").equals("get")) {
             handleGet(in, out, request);
+        } else if (request.getString("type").equals("search")) {
+            handleSearch(in, out, request);
         } else {
             Log.wtf(TAG, "Bluetooth API received UNKNOWN: " + request.getString("type"));
         }
@@ -108,7 +112,10 @@ public class BluetoothServer implements Runnable {
         Log.i(TAG, "Bluetooth API received PUBLISH: " + ndo.getUri());
 
         // Create and execute publish
-        Publish.Builder publishBuilder = new Publish.Builder(mApi, ndo).id(publishJo.getString("msgid")).hoplimit(publishJo.getInt("hoplimit"));
+        Publish.Builder publishBuilder = new Publish.Builder(mApi, ndo)
+                .id(publishJo.getString("msgid"))
+                .hoplimit(publishJo.getInt("hoplimit"));
+
         if (publishJo.getBoolean("octets") == true) {
             byte[] octets = BluetoothCommon.readFile(in);
             ndo.cache(octets);
@@ -134,7 +141,10 @@ public class BluetoothServer implements Runnable {
         Log.i(TAG, "Bluetooth API received GET: " + ndo.getUri());
 
         // Create and execute get
-        Get get = new Get.Builder(mApi, ndo).id(jo.getString("msgid")).hoplimit(jo.getInt("hoplimit")).build();
+        Get get = new Get.Builder(mApi, ndo)
+                .id(jo.getString("msgid"))
+                .hoplimit(jo.getInt("hoplimit"))
+                .build();
         GetResponse response = Node.submit(get).get();
 
         // Create get response
@@ -159,6 +169,48 @@ public class BluetoothServer implements Runnable {
             }
             BluetoothCommon.write(responseJo, out);
         }
+
+    }
+
+    private void handleSearch(DataInputStream in, DataOutputStream out, JSONObject jo)
+            throws JSONException, InterruptedException, ExecutionException, IOException {
+        Log.v(TAG, "handleSearch()");
+
+        // Create and execute search
+        Search.Builder searchBuilder = new Search.Builder(mApi)
+                .id(jo.getString("msgid"))
+                .hoplimit(jo.getInt("hoplimit"));
+
+        JSONArray tokens = jo.getJSONArray("tokens");
+        for (int i = 0; i < tokens.length(); i++) {
+            searchBuilder.token(tokens.getString(i));
+        }
+
+        Search search = searchBuilder.build();
+        SearchResponse response = Node.submit(search).get();
+
+        // Create search response
+        JSONObject responseJo = new JSONObject();
+        responseJo.put("msgid", response.getId());
+
+        JSONArray results = new JSONArray();
+        responseJo.put("results", results);
+
+        if (response.getStatus().isError()) {
+            responseJo.put("status", NetInfStatus.FAILED.getCode());
+            BluetoothCommon.write(responseJo, out);
+            return;
+        }
+
+        responseJo.put("status", NetInfStatus.OK.getCode());
+
+        for (Ndo ndo : response.getResults()) {
+            JSONObject result = new JSONObject();
+            result.put("ni", ndo.getCanonicalUri());
+            result.put("metadata", ndo.getMetadata().toJson());
+        }
+
+        BluetoothCommon.write(responseJo, out);
 
     }
 

@@ -22,7 +22,7 @@ import android.util.Log;
 
 public class RestPublishResource extends ServerResource {
 
-    public static final String TAG = "RestPublishResource";
+    public static final String TAG = RestPublishResource.class.getSimpleName();
 
     @Post
     @Put

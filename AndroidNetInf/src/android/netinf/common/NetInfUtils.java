@@ -18,7 +18,7 @@ import android.util.Log;
 
 public class NetInfUtils {
 
-    public static final String TAG = "NetInfUtils";
+    public static final String TAG = NetInfUtils.class.getSimpleName();
 
     public static String getAuthority(String uri) throws NetInfException {
         Log.v(TAG, "getAuthority()");
@@ -56,6 +56,18 @@ public class NetInfUtils {
     public static String newId() {
         // TODO good enough?
         return RandomStringUtils.randomAlphanumeric(20);
+    }
+
+    public static Ndo.Builder toNdoBuilder(String uri) {
+        Pattern pattern = Pattern.compile("://(.*?)/(.*?);(.*?)$");
+        Matcher matcher = pattern.matcher(uri);
+        if (matcher.find()
+                && matcher.groupCount() == 3
+                && !matcher.group(2).equals("")
+                && !matcher.group(3).equals("")) {
+            return new Ndo.Builder(matcher.group(2), matcher.group(3)).authority(matcher.group(1));
+        }
+        throw new IllegalArgumentException(uri + " is not a valid NetInf URI");
     }
 
     public static Ndo toNdo(JSONObject jo) throws NetInfException {

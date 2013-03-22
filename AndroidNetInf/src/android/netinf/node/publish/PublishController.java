@@ -13,7 +13,7 @@ import android.util.Log;
 
 public class PublishController implements PublishService {
 
-    public static final String TAG = "PublishController";
+    public static final String TAG = PublishController.class.getSimpleName();
 
     private Map<Api, Set<PublishService>> mPublishServices;
     private Map<Api, Set<PublishService>> mLocalPublishServices;

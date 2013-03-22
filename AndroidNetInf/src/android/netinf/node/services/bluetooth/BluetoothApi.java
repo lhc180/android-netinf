@@ -14,7 +14,7 @@ import android.util.Log;
 
 public class BluetoothApi implements Api {
 
-    public static final String TAG = "BluetoothApi";
+    public static final String TAG = BluetoothApi.class.getSimpleName();
 
     private ExecutorService mServerExecutor;
     private ScheduledExecutorService mDiscoveryExecutor;

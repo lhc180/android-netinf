@@ -18,7 +18,7 @@ import android.util.Log;
 
 public class BluetoothDiscovery implements Runnable {
 
-    public static final String TAG = "BluetoothDiscovery";
+    public static final String TAG = BluetoothDiscovery.class.getSimpleName();
 
     /** How often to run the Bluetooth discovery. */
     public static final int DELAY = 600000;

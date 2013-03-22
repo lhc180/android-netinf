@@ -23,7 +23,7 @@ import android.util.Log;
 
 public class RestSearchResource extends ServerResource {
 
-    public static final String TAG = "RestSearchResource";
+    public static final String TAG = RestSearchResource.class.getSimpleName();
 
     public static final long TIMEOUT = 5000;
 

@@ -36,7 +36,7 @@ import android.util.Log;
 
 public class BluetoothCommon {
 
-    public static final String TAG = "BluetoothCommon";
+    public static final String TAG = BluetoothCommon.class.getSimpleName();
 
     public static final int ATTEMPTS_PER_UUID = 2;
 

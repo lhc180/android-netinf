@@ -20,7 +20,7 @@ import android.util.Log;
 
 public class HttpCommon {
 
-    public static final String TAG = "HttpCommon";
+    public static final String TAG = HttpCommon.class.getSimpleName();
 
     public static final String[] PEERS = {"http://213.159.185.124:8080", "http://213.159.185.166:8082"};
 //    public static final String[] PEERS = {"http://213.159.185.166:8082"};

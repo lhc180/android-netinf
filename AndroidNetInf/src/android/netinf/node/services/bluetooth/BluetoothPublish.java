@@ -21,7 +21,7 @@ import android.util.Log;
 
 public class BluetoothPublish implements PublishService {
 
-    public static final String TAG = "BluetoothPublish";
+    public static final String TAG = BluetoothPublish.class.getSimpleName();
 
     private BluetoothApi mApi;
 
@@ -34,7 +34,7 @@ public class BluetoothPublish implements PublishService {
             Log.v(TAG, "publish()");
             Log.i(TAG, "Bluetooth CL received PUBLISH: " + publish);
 
-            // Create JSON representation of Pulbish
+            // Create JSON representation of Publish
             JSONObject jo = null;
             try {
                 jo = createPublishJson(publish);

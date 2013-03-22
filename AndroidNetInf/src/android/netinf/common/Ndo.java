@@ -23,6 +23,7 @@ public class Ndo implements Serializable {
         private String mHash;
         private Set<Locator> mLocators = new HashSet<Locator>();
         private Metadata mMetadata = new Metadata();
+        private long mTimestamp = System.currentTimeMillis();
 
         public Builder(Ndo ndo) {
             mAuthority = ndo.mAuthority;
@@ -30,6 +31,7 @@ public class Ndo implements Serializable {
             mHash = ndo.mHash;
             mLocators.addAll(ndo.mLocators);
             mMetadata = new Metadata(ndo.mMetadata);
+            mTimestamp = ndo.mTimestamp;
         }
 
         public Builder(String algorithm, String hash) {
@@ -41,6 +43,7 @@ public class Ndo implements Serializable {
         public Builder locator(Locator locator) { mLocators.add(locator); return this; }
         public Builder locators(Set<Locator> locators) { mLocators.addAll(locators); return this; }
         public Builder metadata(Metadata metadata) { mMetadata = metadata; return this; }
+        public Builder timestamp(long timestamp) { mTimestamp = timestamp; return this; }
 
         public Ndo build() {
             return new Ndo(this);
@@ -49,7 +52,7 @@ public class Ndo implements Serializable {
     }
 
     /** Log Tag. */
-    public static final String TAG = "Ndo";
+    public static final String TAG = Ndo.class.getSimpleName();
 
     /** Global Cache Folder. */
     public static final File CACHE_FOLDER = new File(Environment.getExternalStorageDirectory() + "/shared/");
@@ -59,6 +62,7 @@ public class Ndo implements Serializable {
     private String mHash;
     private Set<Locator> mLocators;
     private Metadata mMetadata;
+    private long mTimestamp;
     private File mOctets;
 
     private Ndo(Builder builder) {
@@ -67,6 +71,7 @@ public class Ndo implements Serializable {
         mHash = builder.mHash;
         mLocators = Collections.unmodifiableSet(builder.mLocators);
         mMetadata = builder.mMetadata;
+        mTimestamp = builder.mTimestamp;
         mOctets = new File(CACHE_FOLDER, builder.mHash);
     }
 

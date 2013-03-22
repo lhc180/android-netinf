@@ -19,7 +19,7 @@ import android.util.Log;
 
 public class RestGetResource extends ServerResource {
 
-    public static final String TAG = "RestGetResource";
+    public static final String TAG = RestGetResource.class.getSimpleName();
 
     @org.restlet.resource.Get
     public Representation handleGet() {

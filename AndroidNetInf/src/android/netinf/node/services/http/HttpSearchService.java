@@ -34,7 +34,7 @@ import android.util.Log;
 
 public class HttpSearchService implements SearchService {
 
-    public static final String TAG = "HttpSearchService";
+    public static final String TAG = HttpSearchService.class.getSimpleName();
 
     public static final int TIMEOUT = 1000;
 

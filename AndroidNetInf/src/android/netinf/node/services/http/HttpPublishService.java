@@ -27,7 +27,7 @@ import android.util.Log;
 
 public class HttpPublishService implements PublishService {
 
-    public static final String TAG = "HttpPublishService";
+    public static final String TAG = HttpPublishService.class.getSimpleName();
 
     public static final int TIMEOUT = 2000;
 

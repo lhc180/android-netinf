@@ -11,7 +11,7 @@ import android.util.Log;
 
 public class GetController implements GetService {
 
-    public static final String TAG = "GetController";
+    public static final String TAG = GetController.class.getSimpleName();
 
     private Map<Api, Set<GetService>> mGetServices;
     private Map<Api, Set<GetService>> mLocalGetServices;

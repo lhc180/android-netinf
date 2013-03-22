@@ -21,7 +21,7 @@ import android.util.Log;
 public class Metadata implements Serializable {
 
     /** Log Tag. */
-    public static final String TAG = "Metadata";
+    public static final String TAG = Metadata.class.getSimpleName();
 
     /** Metadata (Should not contain outer "meta":{...}). */
     private JSONObject mMetadata = new JSONObject();

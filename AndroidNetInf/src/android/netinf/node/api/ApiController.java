@@ -7,7 +7,7 @@ import android.util.Log;
 
 public class ApiController {
 
-    public static final String TAG = "ApiController";
+    public static final String TAG = ApiController.class.getSimpleName();
 
     private Set<Api> mApis = new LinkedHashSet<Api>();
 

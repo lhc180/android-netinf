@@ -28,9 +28,8 @@ public class Search extends Request {
             mTokens = search.getTokens();
         }
 
-        public Builder(Api api, String id) {
+        public Builder(Api api) {
             mSource = api;
-            mId = id;
         }
 
         public Builder id(String id) { mId = id; return this; }

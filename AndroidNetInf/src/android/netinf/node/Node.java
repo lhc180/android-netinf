@@ -33,7 +33,7 @@ import android.util.Log;
 
 public class Node {
 
-    public static final String TAG = "Node";
+    public static final String TAG = Node.class.getSimpleName();
 
     /** Singleton Instance. */
     private static final Node INSTANCE = new Node();
