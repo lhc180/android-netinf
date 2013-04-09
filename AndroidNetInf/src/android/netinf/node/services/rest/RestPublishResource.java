@@ -27,7 +27,6 @@ public class RestPublishResource extends ServerResource {
     @Post
     @Put
     public Representation handlePublish() {
-        Log.v(TAG, "handlePublish()");
 
         // Extract
         Map<String, String> query = getQuery().getValuesMap();

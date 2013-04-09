@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.netinf.node.api.Api;
-import android.util.Log;
 
 public class BluetoothApi implements Api {
 
@@ -34,7 +33,6 @@ public class BluetoothApi implements Api {
 
     @Override
     public void start() {
-        Log.v(TAG, "start()");
         // TODO enable bluetooth discovery when relevant
         mDiscoveryExecutor.scheduleWithFixedDelay(mBluetoothDiscovery, 0, BluetoothDiscovery.DELAY, TimeUnit.MILLISECONDS);
         for (UUID uuid : BluetoothCommon.UUIDS) {
@@ -45,7 +43,6 @@ public class BluetoothApi implements Api {
 
     @Override
     public void stop() {
-        Log.v(TAG, "stop()");
         // TODO clean up stuff properly
         mDiscoveryExecutor.shutdown();
         mServerExecutor.shutdown();

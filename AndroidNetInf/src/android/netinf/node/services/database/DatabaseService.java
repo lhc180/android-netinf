@@ -28,7 +28,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
 
     public static final String TAG = DatabaseService.class.getSimpleName();
 
-    private static final String DATABASE_NAME = "NdoDatabase.db3";
+    public static final String DATABASE_NAME = "NdoDatabase.db3";
     private static final int DATABASE_VERSION = 1;
 
     private static final String TEXT = "TEXT";
@@ -47,7 +47,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
 
     @Override
     public PublishResponse perform(Publish publish) {
-        Log.v(TAG, "publish()");
         Log.i(TAG, "Database received PUBLISH: " + publish);
         Ndo ndo = publish.getNdo();
         // TODO Don't just overwrite
@@ -68,7 +67,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
 
     @Override
     public GetResponse perform(Get get) {
-        Log.v(TAG, "get()");
         Log.i(TAG, "Database received GET: " + get);
         byte[] blob = getBlob(get.getNdo());
         Ndo ndo = null;
@@ -81,7 +79,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
 
     @Override
     public SearchResponse perform(Search search) {
-        Log.v(TAG, "search()");
         Log.i(TAG, "Database received SEARCH: " + search);
         String[] columns = {COLUMN_NDO};
         SQLiteDatabase db = getReadableDatabase();
@@ -105,7 +102,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     private byte[] getBlob(Ndo ndo) {
-        Log.v(TAG, "getBlob()");
         String[] columns = {COLUMN_NDO};
         String selection = COLUMN_HASH_ALG + "=? AND " + COLUMN_HASH + "=?";
         String[] selectionArgs = {ndo.getAlgorithm(), ndo.getHash()};
@@ -122,12 +118,10 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     private boolean contains(Ndo ndo) {
-        Log.v(TAG, "contains()");
         return getBlob(ndo) != null;
     }
 
     private void insert(Ndo ndo) {
-        Log.v(TAG, "insert()");
         ContentValues values = new ContentValues();
         values.put(COLUMN_HASH_ALG, ndo.getAlgorithm());
         values.put(COLUMN_HASH, ndo.getHash());
@@ -139,7 +133,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     private int delete(Ndo ndo) {
-        Log.v(TAG, "delete()");
         SQLiteDatabase db = getWritableDatabase();
         String whereClause = COLUMN_HASH_ALG + "=? AND " + COLUMN_HASH + "=?";
         String[] whereArgs = new String[] {ndo.getAlgorithm(), ndo.getHash()};
@@ -150,7 +143,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        Log.v(TAG, "onCreate()");
         String createTable = "CREATE TABLE " + TABLE_NDO + " ("
                 + COLUMN_HASH_ALG + " " + TEXT + " " + NOT_NULL + ", "
                 + COLUMN_HASH + " " + TEXT + " " + NOT_NULL + ", "
@@ -161,7 +153,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Log.v(TAG, "onUpgrade()");
         clearDatabase();
     }
 
@@ -170,7 +161,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     private void clearDatabase(SQLiteDatabase db) {
-        Log.v(TAG, "clearDatabase()");
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NDO);
         onCreate(db);
     }

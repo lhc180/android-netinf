@@ -40,7 +40,6 @@ public class HttpSearchService implements SearchService {
 
     @Override
     public SearchResponse perform(Search search) {
-        Log.v(TAG, "search()");
         Log.i(TAG, "HTTP CL received SEARCH: " + search);
 
         // HTTP Client
@@ -75,7 +74,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private HttpPost createSearch(String peer, Search search) throws UnsupportedEncodingException {
-        Log.v(TAG, "createSearch()");
 
         HttpPost post = new HttpPost(peer + "/netinfproto/search");
         post.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -94,7 +92,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private String createTokens(Set<String> tokens) {
-        Log.v(TAG, "createTokens()");
         StringBuilder builder = new StringBuilder();
         for (String token : tokens) {
             builder.append(token);
@@ -104,7 +101,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private Set<Ndo> parse(HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parse()");
 
         Set<Ndo> ndos = new LinkedHashSet<Ndo>();
 
@@ -143,7 +139,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private String getAlgorithm(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getAlgorithm()");
         String ni = jo.getString("ni");
         Pattern pattern = Pattern.compile("/(.*?);");
         Matcher matcher = pattern.matcher(ni);
@@ -155,7 +150,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private String getHash(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getHash()");
         String ni = jo.getString("ni");
         Pattern pattern = Pattern.compile(";(.*?)$");
         Matcher matcher = pattern.matcher(ni);
@@ -167,7 +161,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private String getMetadata(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getMetadata()");
         String metadata = jo.getString("metadata");
         return metadata.toString();
     }

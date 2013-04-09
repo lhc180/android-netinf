@@ -23,7 +23,6 @@ public class RestGetResource extends ServerResource {
 
     @org.restlet.resource.Get
     public Representation handleGet() {
-        Log.v(TAG, "handleGet()");
 
         // Extract
         Map<String, String> query = getQuery().getValuesMap();

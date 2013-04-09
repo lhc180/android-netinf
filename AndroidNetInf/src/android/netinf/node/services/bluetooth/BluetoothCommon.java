@@ -48,7 +48,6 @@ public class BluetoothCommon {
                     UUID.fromString("111a8504-6ae2-11e2-bcfd-0800200c9a66")})));
 
     public static BluetoothSocket connect(BluetoothDevice device) throws IOException {
-        Log.v(TAG, "connect()");
 
         BluetoothSocket socket = null;
         // Try one UUID at a time, a few times each until one connects
@@ -93,7 +92,6 @@ public class BluetoothCommon {
     }
 
     public static void write(JSONObject jo, DataOutputStream bluetoothOut) throws IOException {
-        Log.v(TAG, "write()");
         Log.d(TAG, "Wrote: " + jo.toString());
         byte[] buffer = jo.toString().getBytes("UTF-8");
         bluetoothOut.writeInt(buffer.length);
@@ -101,7 +99,6 @@ public class BluetoothCommon {
     }
 
     public static void write(File file, DataOutputStream bluetoothOut) throws IOException {
-        Log.v(TAG, "write()");
         long length = file.length();
         if (length > Integer.MAX_VALUE) {
             throw new IOException("Failed to write file. File too long.");
@@ -119,7 +116,6 @@ public class BluetoothCommon {
     }
 
     public static JSONObject readJson(DataInputStream bluetoothIn) throws IOException, JSONException {
-        Log.v(TAG, "readJson()");
         byte[] buffer = read(bluetoothIn);
         String json = new String(buffer, "UTF-8");
         Log.d(TAG, "Read: " + new JSONObject(json).toString());
@@ -127,7 +123,6 @@ public class BluetoothCommon {
     }
 
     public static byte[] readFile(DataInputStream bluetoothIn) throws IOException {
-        Log.v(TAG, "readFile()");
         // TODO Don't read entire file into memory
         return read(bluetoothIn);
     }

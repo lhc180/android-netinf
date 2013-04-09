@@ -118,7 +118,7 @@ public class BluetoothDiscovery implements Runnable {
 
                 // Found BluetoothDevice, add it to the new list
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                Log.v(TAG, "Found Bluetooth device: " + device.getName() + ", " + device.getAddress());
+                Log.i(TAG, "Bluetooth device found: " + device.getName() + ", " + device.getAddress());
                 mNewDevices.put(device.getAddress(), new SeenDevice(device, new Date()));
 
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {

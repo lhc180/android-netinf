@@ -123,6 +123,10 @@ public class Ndo implements Serializable {
         FileUtils.writeByteArrayToFile(mOctets, octets);
     }
 
+    public void cache(String data, String encoding) throws IOException {
+        FileUtils.writeStringToFile(mOctets, data, encoding, false);
+    }
+
     public FileOutputStream newCacheStream() throws FileNotFoundException {
         return new FileOutputStream(mOctets);
     }

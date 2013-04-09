@@ -33,7 +33,6 @@ public class HttpPublishService implements PublishService {
 
     @Override
     public PublishResponse perform(Publish publish) {
-        Log.v(TAG, "publish()");
         Log.i(TAG, "HTTP CL received PUBLISH: " + publish);
 
         // HTTP Client
@@ -70,7 +69,6 @@ public class HttpPublishService implements PublishService {
     }
 
     private HttpPost createPublish(String peer, Publish publish) throws UnsupportedEncodingException {
-        Log.v(TAG, "createPublish()");
 
         Ndo ndo = publish.getNdo();
 

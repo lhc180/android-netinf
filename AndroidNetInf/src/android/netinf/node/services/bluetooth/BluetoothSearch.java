@@ -32,7 +32,6 @@ public class BluetoothSearch implements SearchService {
 
     @Override
     public SearchResponse perform(Search search) {
-        Log.v(TAG, "perform()");
         Log.i(TAG, "Bluetooth CL received SEARCH: " + search);
 
         // Create JSON representation of Search
@@ -75,7 +74,6 @@ public class BluetoothSearch implements SearchService {
     }
 
     private JSONObject createSearchJson(Search search) throws JSONException {
-            Log.v(TAG, "createSearchJson");
 
             JSONObject jo = new JSONObject();
 

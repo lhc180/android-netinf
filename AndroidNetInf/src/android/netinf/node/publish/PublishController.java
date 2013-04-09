@@ -39,7 +39,6 @@ public class PublishController implements PublishService {
 
     @Override
     public PublishResponse perform(Publish incomingPublish) {
-        Log.v(TAG, "perform()");
 
         // Reduce hop limit
         Publish publish = new Publish.Builder(incomingPublish).consumeHop().build();
@@ -47,14 +46,12 @@ public class PublishController implements PublishService {
         List<PublishResponse> responses = new LinkedList<PublishResponse>();
 
         // Check local services
-        Log.i(TAG, "Local PUBLISH of " + publish);
         for (PublishService publishService : mLocalPublishServices.get(publish.getSource())) {
             responses.add(publishService.perform(publish));
         }
 
         // Check other services
         if (publish.getHopLimit() > 0) {
-            Log.i(TAG, "Remote PUBLISH of " + publish);
             for (PublishService publishService : mPublishServices.get(publish.getSource())) {
                 responses.add(publishService.perform(publish));
             }

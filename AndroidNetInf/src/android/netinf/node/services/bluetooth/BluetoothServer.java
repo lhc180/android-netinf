@@ -87,8 +87,6 @@ public class BluetoothServer implements Runnable {
     private void handleRequest(DataInputStream in, DataOutputStream out)
             throws IOException, JSONException, NetInfException, InterruptedException, ExecutionException {
 
-        Log.v(TAG, "handleRequest()");
-
         JSONObject request = BluetoothCommon.readJson(in);
         if (request.getString("type").equals("publish")) {
             handlePublish(in, out, request);
@@ -107,7 +105,6 @@ public class BluetoothServer implements Runnable {
     private void handlePublish(DataInputStream in, DataOutputStream out, JSONObject publishJo)
             throws NetInfException, JSONException, IOException, InterruptedException, ExecutionException {
 
-        Log.v(TAG, "handlePublish()");
         Ndo ndo = NetInfUtils.toNdo(publishJo);
         Log.i(TAG, "Bluetooth API received PUBLISH: " + ndo.getUri());
 
@@ -136,7 +133,6 @@ public class BluetoothServer implements Runnable {
     private void handleGet(DataInputStream in, DataOutputStream out, JSONObject jo)
             throws NetInfException, JSONException, IOException, InterruptedException, ExecutionException {
 
-        Log.v(TAG, "handleGet()");
         Ndo ndo = NetInfUtils.toNdo(jo);
         Log.i(TAG, "Bluetooth API received GET: " + ndo.getUri());
 
@@ -174,7 +170,6 @@ public class BluetoothServer implements Runnable {
 
     private void handleSearch(DataInputStream in, DataOutputStream out, JSONObject jo)
             throws JSONException, InterruptedException, ExecutionException, IOException {
-        Log.v(TAG, "handleSearch()");
 
         // Create and execute search
         Search.Builder searchBuilder = new Search.Builder(mApi)
@@ -187,6 +182,9 @@ public class BluetoothServer implements Runnable {
         }
 
         Search search = searchBuilder.build();
+
+        Log.i(TAG, "Bluetooth API received SEARCH: " + search);
+
         SearchResponse response = Node.submit(search).get();
 
         // Create search response

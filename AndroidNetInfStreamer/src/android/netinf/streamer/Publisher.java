@@ -3,8 +3,6 @@ package android.netinf.streamer;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.commons.lang3.StringUtils;
-
 import android.netinf.common.Ndo;
 import android.netinf.node.Node;
 import android.netinf.node.publish.Publish;
@@ -14,26 +12,45 @@ public class Publisher {
 
     public static final String TAG = Publisher.class.getSimpleName();
 
-    private int mChunkNumber = 0;
+    private String mFirstHash;
+    private int mDebugCounter = 0;
 
     public void publish(File file) {
-        Log.v(TAG, "publish()");
 
         try {
 
-            Ndo ndo = new Ndo.Builder("video_chunk", "hash" + StringUtils.leftPad(Integer.toString(mChunkNumber), 5, "0")).build();
-            ndo.cache(file); // Would like to attach octets instead?
-
-            Publish publish = new Publish.Builder(ndo).fullPut().build();
-
+            // Publish the chunk
+//            String hash = NetInfUtils.hash(file, "sha-256");
+            String hash = "chunk-" + mDebugCounter++;
+            Ndo ndo = new Ndo.Builder("sha-256", hash).build();
+            ndo.cache(file);
+            Publish publish = new Publish.Builder(ndo).build();
             Node.submit(publish);
 
-            mChunkNumber++;
+            // Publish the index, unless it is the first chunk
+            if (mFirstHash == null) {
+
+                mFirstHash = hash;
+
+            } else {
+
+                String indexHash = "test";
+                Ndo indexNdo = new Ndo.Builder("video", indexHash).build();
+                indexNdo.cache(mFirstHash + "\n" + hash, "utf-8");
+                Publish indexPublish = new Publish.Builder(indexNdo).build();
+                Node.submit(indexPublish);
+
+            }
 
         } catch (IOException e) {
-            Log.e(TAG, "Failed to publish " + file.getAbsolutePath());
+            Log.wtf(TAG, "Failed publishing chunk/index", e);
         }
+//        catch (NoSuchAlgorithmException e) {
+//            Log.wtf(TAG, "sha-256 not available", e);
+//        }
 
     }
+
+
 
 }

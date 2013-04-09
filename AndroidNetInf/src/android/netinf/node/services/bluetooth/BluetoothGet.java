@@ -31,7 +31,6 @@ public class BluetoothGet implements GetService {
 
     @Override
     public GetResponse perform(Get get) {
-        Log.v(TAG, "get()");
         Log.i(TAG, "Bluetooth CL received GET: " + get);
 
         // Create JSON representation of the Get

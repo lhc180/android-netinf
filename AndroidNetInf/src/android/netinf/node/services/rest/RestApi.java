@@ -35,7 +35,6 @@ public class RestApi implements Api {
 
     @Override
     public void start() {
-        Log.v(TAG, "start()");
         try {
             mComponent.start();
         } catch (Exception e) {
@@ -45,7 +44,6 @@ public class RestApi implements Api {
 
     @Override
     public void stop() {
-        Log.v(TAG, "stop()");
         try {
             mComponent.stop();
         } catch (Exception e) {

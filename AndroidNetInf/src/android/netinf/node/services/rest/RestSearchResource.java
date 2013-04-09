@@ -15,7 +15,6 @@ import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
-import android.netinf.common.NetInfUtils;
 import android.netinf.node.Node;
 import android.netinf.node.search.Search;
 import android.netinf.node.search.SearchResponse;
@@ -29,7 +28,6 @@ public class RestSearchResource extends ServerResource {
 
     @Get
     public Representation handleSearch() {
-        Log.v(TAG, "handleSearch()");
 
         // Extract
         Map<String, String> query = getQuery().getValuesMap();
@@ -44,7 +42,7 @@ public class RestSearchResource extends ServerResource {
         for (String token : query.get(RestCommon.TOKENS).split(" ")) {
             tokens.add(token);
         }
-        Search search = new Search.Builder(RestApi.getInstance(), NetInfUtils.newId()).tokens(tokens).timeout(TIMEOUT).build();
+        Search search = new Search.Builder(RestApi.getInstance()).tokens(tokens).timeout(TIMEOUT).build();
         Log.i(TAG, "REST API received SEARCH: " + search);
 
         try {

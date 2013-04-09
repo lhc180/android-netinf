@@ -38,7 +38,6 @@ public class SearchController implements SearchService {
 
     @Override
     public SearchResponse perform(Search incomingSearch) {
-        Log.v(TAG, "search()");
 
         // Reduce hop limit
         final Search search = new Search.Builder(incomingSearch).consumeHop().build();
@@ -55,6 +54,7 @@ public class SearchController implements SearchService {
         final SearchResponse.Builder searchResponseBuilder = new SearchResponse.Builder(search);
 
         for (final SearchService searchService : searchServices) {
+            // TODO use an Executor instead
             new Thread(new Runnable() {
                 @Override
                 public void run() {

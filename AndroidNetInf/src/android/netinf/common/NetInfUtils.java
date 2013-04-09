@@ -21,7 +21,6 @@ public class NetInfUtils {
     public static final String TAG = NetInfUtils.class.getSimpleName();
 
     public static String getAuthority(String uri) throws NetInfException {
-        Log.v(TAG, "getAuthority()");
         Pattern pattern = Pattern.compile("://(.*?)/");
         Matcher matcher = pattern.matcher(uri);
         if (matcher.find()) {
@@ -32,7 +31,6 @@ public class NetInfUtils {
     }
 
     public static String getAlgorithm(String uri) throws NetInfException {
-        Log.v(TAG, "getAlgorithm()");
         Pattern pattern = Pattern.compile("://.*/(.*?);");
         Matcher matcher = pattern.matcher(uri);
         if (matcher.find()) {
@@ -43,7 +41,6 @@ public class NetInfUtils {
     }
 
     public static String getHash(String uri) throws NetInfException {
-        Log.v(TAG, "getHash()");
         Pattern pattern = Pattern.compile("://.*/.*;(.*?)$");
         Matcher matcher = pattern.matcher(uri);
         if (matcher.find()) {
@@ -71,7 +68,6 @@ public class NetInfUtils {
     }
 
     public static Ndo toNdo(JSONObject jo) throws NetInfException {
-        Log.v(TAG, "toNdo()");
 
         // Required
         // Algorithm and hash

@@ -31,7 +31,6 @@ public class BluetoothPublish implements PublishService {
 
     @Override
     public PublishResponse perform(Publish publish) {
-            Log.v(TAG, "publish()");
             Log.i(TAG, "Bluetooth CL received PUBLISH: " + publish);
 
             // Create JSON representation of Publish
@@ -87,7 +86,6 @@ public class BluetoothPublish implements PublishService {
     }
 
     private JSONObject createPublishJson(Publish publish) throws JSONException {
-        Log.v(TAG, "createPublish");
 
         Ndo ndo = publish.getNdo();
 
@@ -115,56 +113,5 @@ public class BluetoothPublish implements PublishService {
         return jo;
 
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-//    private void close(BluetoothSocket socket) {
-//        Log.v(TAG, "close()");
-//        try {
-//            socket.getInputStream().close();
-//        } catch (IOException e) {
-//            Log.e(TAG, "Failed to close BluetoothSocket InputStream", e);
-//        }
-//        try {
-//            socket.getOutputStream().close();
-//        } catch (IOException e) {
-//            Log.e(TAG, "Failed to close BluetoothSocket OutputStream", e);
-//        }
-//        try {
-//            socket.close();
-//        } catch (IOException e) {
-//            Log.e(TAG, "Failed to close BluetoothSocket", e);
-//        }
-//    }
 
 }

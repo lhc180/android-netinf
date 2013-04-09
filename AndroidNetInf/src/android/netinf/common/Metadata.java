@@ -199,7 +199,7 @@ public class Metadata implements Serializable {
         } else if (object instanceof JSONArray) {
             return matchesJsonArray((JSONArray) object, tokens);
         } else {
-            Log.v(TAG, "Unhandled Object: " + object.getClass());
+            Log.w(TAG, "Unhandled Object: " + object.getClass());
             return false;
         }
     }

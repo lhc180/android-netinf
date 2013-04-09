@@ -1,9 +1,12 @@
 package android.netinf.node;
 
+import java.io.File;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import org.apache.commons.io.FileUtils;
 
 import android.content.Context;
 import android.netinf.node.api.Api;
@@ -28,6 +31,7 @@ import android.netinf.node.services.http.HttpGetService;
 import android.netinf.node.services.http.HttpPublishService;
 import android.netinf.node.services.http.HttpSearchService;
 import android.netinf.node.services.rest.RestApi;
+import android.os.Environment;
 import android.util.Log;
 
 
@@ -45,14 +49,15 @@ public class Node {
     private SearchController mSearchController;
     private ApiController mApiController;
 
-    private ExecutorService mRequestExecutor = Executors.newCachedThreadPool();
+    // TODO what is a good default choice?
+//    private ExecutorService mRequestExecutor = Executors.newCachedThreadPool();
+    private ExecutorService mRequestExecutor = Executors.newFixedThreadPool(5);
 
     private Node() {
 
     }
 
     public static void start(Context context) {
-        Log.v(TAG, "start()");
 
         // Setup Node
         Node node = INSTANCE;
@@ -100,6 +105,14 @@ public class Node {
         node.mApiController.start();
     }
 
+    public static void clear() {
+
+        // TODO proper implementation
+        INSTANCE.mContext.deleteDatabase(DatabaseService.DATABASE_NAME);
+        FileUtils.deleteQuietly(new File(Environment.getExternalStorageDirectory(), "shared"));
+
+    }
+
     public static Future<PublishResponse> submit(final Publish publish) {
         Log.i(TAG, "PUBLISH submitted for execution: " + publish);
 
@@ -144,21 +157,6 @@ public class Node {
         // Submit the Callable to the Node's ExecutorService
         return INSTANCE.mRequestExecutor.submit(task);
     }
-
-//    @Override
-//    public PublishResponse perform(Publish publish) {
-//        return mPublishController.perform(publish);
-//    }
-//
-//    @Override
-//    public GetResponse perform(Get get) {
-//        return mGetController.perform(get);
-//    }
-//
-//    @Override
-//    public SearchResponse perform(Search search) {
-//        return mSearchController.perform(search);
-//    }
 
     private void setApiController(ApiController apiController) {
         mApiController = apiController;

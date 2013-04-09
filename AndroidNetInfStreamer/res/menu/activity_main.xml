@@ -8,4 +8,8 @@
           android:icon="@drawable/av_play"
           android:title="@string/menu_play"
           android:showAsAction="ifRoom|withText" />
+                <item android:id="@+id/menu_clear"
+          android:icon="@drawable/ic_action_delete"
+          android:title="@string/menu_clear"
+          android:showAsAction="ifRoom|withText" />
 </menu>

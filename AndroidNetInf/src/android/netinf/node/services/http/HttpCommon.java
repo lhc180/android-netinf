@@ -28,8 +28,6 @@ public class HttpCommon {
 
 
     public static String getContentType(HttpResponse response) throws NetInfException {
-        Log.v(TAG, "getContentType()");
-
         Header header = getEntity(response).getContentType();
         if (header == null) {
             throw new NetInfException("HTTP response content-type is null");
@@ -38,8 +36,6 @@ public class HttpCommon {
     }
 
     public static HttpEntity getEntity(HttpResponse response) throws NetInfException {
-        Log.v(TAG, "getEntity()");
-
         HttpEntity entity = response.getEntity();
         if (entity == null) {
             throw new NetInfException("HTTP response entity is null");
@@ -48,8 +44,6 @@ public class HttpCommon {
     }
 
     public static InputStream getContent(HttpEntity entity) throws NetInfException {
-        Log.v(TAG, "getContent()");
-
         try {
             return entity.getContent();
         } catch (IllegalStateException e) {
@@ -60,7 +54,6 @@ public class HttpCommon {
     }
 
     public static String getJson(InputStream content) throws NetInfException {
-        Log.v(TAG, "getJson()");
         try {
             return IOUtils.toString(content);
         } catch (IOException e) {
@@ -69,7 +62,6 @@ public class HttpCommon {
     }
 
     public static JSONObject parseJson(String json) throws NetInfException {
-        Log.v(TAG, "parseJson()");
         Log.d(TAG, "json = " + json);
         try {
             return new JSONObject(json);

@@ -46,7 +46,6 @@ public class HttpGetService implements GetService {
 
     @Override
     public GetResponse perform(Get get) {
-        Log.v(TAG, "get()");
         Log.i(TAG, "HTTP CL received GET: " + get);
 
         // HTTP Client
@@ -78,7 +77,6 @@ public class HttpGetService implements GetService {
     }
 
     private HttpPost createGet(String peer, Get get) throws UnsupportedEncodingException {
-        Log.v(TAG, "createGet()");
 
         HttpPost post = new HttpPost(peer + "/netinfproto/get");
         post.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -97,7 +95,6 @@ public class HttpGetService implements GetService {
     }
 
     private GetResponse parse(Get get, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parse()");
 
         int status = response.getStatusLine().getStatusCode();
 
@@ -113,7 +110,6 @@ public class HttpGetService implements GetService {
     }
 
     private GetResponse parseLocatorResponse(Get get, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parseLocatorsResponse()");
 
         // Get JSON
         HttpEntity entity = HttpCommon.getEntity(response);
@@ -142,7 +138,6 @@ public class HttpGetService implements GetService {
     }
 
     private GetResponse parseBinaryResponse(Get get, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parseBinaryResponse()");
 
         String contentType = HttpCommon.getContentType(response);
         if (contentType.startsWith("multipart/form-data")) {
@@ -157,7 +152,6 @@ public class HttpGetService implements GetService {
     }
 
     private GetResponse parseMultipart(Get get, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parseMultipart()");
 
         // Multipart Boundary
         String contentType = HttpCommon.getContentType(response);
@@ -221,7 +215,6 @@ public class HttpGetService implements GetService {
     }
 
     private GetResponse parseBinary(Get get, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parseBinary()");
 
         // Read
         InputStream in = null;
@@ -245,7 +238,6 @@ public class HttpGetService implements GetService {
     }
 
     private Set<Locator> getLocators(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getLocators");
         Set<Locator> result = new LinkedHashSet<Locator>();
         JSONArray locs = jo.getJSONArray("loc");
         for (int i = 0; i < locs.length(); i++) {
@@ -256,7 +248,6 @@ public class HttpGetService implements GetService {
     }
 
     private Metadata getMetadata(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getMetadata");
         return new Metadata(jo.getJSONObject("metadata"));
     }
 

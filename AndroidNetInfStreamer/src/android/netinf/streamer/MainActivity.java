@@ -74,6 +74,9 @@ public class MainActivity extends Activity {
             case R.id.menu_play:
                 togglePlay();
                 return true;
+            case R.id.menu_clear:
+                clear();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -199,6 +202,12 @@ public class MainActivity extends Activity {
 
         mCamera = null;
         mEncoder = null;
+
+    }
+
+    public void clear() {
+
+        Node.clear();
 
     }
 
