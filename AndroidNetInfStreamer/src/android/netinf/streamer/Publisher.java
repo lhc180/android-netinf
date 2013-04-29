@@ -12,8 +12,7 @@ public class Publisher {
 
     public static final String TAG = Publisher.class.getSimpleName();
 
-    private String mFirstHash;
-    private int mDebugCounter = 0;
+    private int mChunkNumber = 0;
 
     public void publish(File file) {
 
@@ -21,33 +20,27 @@ public class Publisher {
 
             // Publish the chunk
 //            String hash = NetInfUtils.hash(file, "sha-256");
-            String hash = "chunk-" + mDebugCounter++;
-            Ndo ndo = new Ndo.Builder("sha-256", hash).build();
+            String algorithm = "chunk";
+            String hash = "stream_name-" + mChunkNumber;
+            Ndo ndo = new Ndo.Builder(algorithm, hash).build();
             ndo.cache(file);
             Publish publish = new Publish.Builder(ndo).build();
             Node.submit(publish);
 
-            // Publish the index, unless it is the first chunk
-            if (mFirstHash == null) {
 
-                mFirstHash = hash;
+            // Publish the index
+            algorithm = "index";
+            hash = "stream_name";
+            ndo = new Ndo.Builder(algorithm, hash).build();
+            ndo.cache(Integer.toString(mChunkNumber), "utf-8");
+            publish = new Publish.Builder(ndo).build();
+            Node.submit(publish);
 
-            } else {
-
-                String indexHash = "test";
-                Ndo indexNdo = new Ndo.Builder("video", indexHash).build();
-                indexNdo.cache(mFirstHash + "\n" + hash, "utf-8");
-                Publish indexPublish = new Publish.Builder(indexNdo).build();
-                Node.submit(indexPublish);
-
-            }
+            mChunkNumber++;
 
         } catch (IOException e) {
             Log.wtf(TAG, "Failed publishing chunk/index", e);
         }
-//        catch (NoSuchAlgorithmException e) {
-//            Log.wtf(TAG, "sha-256 not available", e);
-//        }
 
     }
 

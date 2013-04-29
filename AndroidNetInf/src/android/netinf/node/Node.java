@@ -1,6 +1,8 @@
 package android.netinf.node;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,8 +11,8 @@ import java.util.concurrent.Future;
 import org.apache.commons.io.FileUtils;
 
 import android.content.Context;
+import android.netinf.common.ApiToServiceMap;
 import android.netinf.node.api.Api;
-import android.netinf.node.api.ApiController;
 import android.netinf.node.get.Get;
 import android.netinf.node.get.GetController;
 import android.netinf.node.get.GetResponse;
@@ -26,6 +28,7 @@ import android.netinf.node.search.SearchService;
 import android.netinf.node.services.bluetooth.BluetoothApi;
 import android.netinf.node.services.bluetooth.BluetoothGet;
 import android.netinf.node.services.bluetooth.BluetoothPublish;
+import android.netinf.node.services.bluetooth.BluetoothSearch;
 import android.netinf.node.services.database.DatabaseService;
 import android.netinf.node.services.http.HttpGetService;
 import android.netinf.node.services.http.HttpPublishService;
@@ -47,7 +50,6 @@ public class Node {
     private PublishController mPublishController;
     private GetController mGetController;
     private SearchController mSearchController;
-    private ApiController mApiController;
 
     // TODO what is a good default choice?
 //    private ExecutorService mRequestExecutor = Executors.newCachedThreadPool();
@@ -63,53 +65,73 @@ public class Node {
         Node node = INSTANCE;
         node.mContext = context;
 
-        // Set Controllers
-        node.setApiController(new ApiController());
-        node.setPublishController(new PublishController());
-        node.setGetController(new GetController());
-        node.setSearchController(new SearchController());
-
         // Create Api(s) and Service(s)
+
         // REST
-        RestApi restApi = RestApi.getInstance();
+        RestApi restApi                     = RestApi.getInstance();
+
         // Database
-        DatabaseService db = new DatabaseService(node.mContext);
+        DatabaseService db                  = new DatabaseService(node.mContext);
+
         // HTTP CL
-        HttpPublishService httpPublish = new HttpPublishService();
-        HttpGetService httpGet = new HttpGetService();
-        HttpSearchService httpSearch = new HttpSearchService();
+        HttpPublishService httpPublish      = new HttpPublishService();
+        HttpGetService httpGet              = new HttpGetService();
+        HttpSearchService httpSearch        = new HttpSearchService();
+
         // Bluetooth CL
-        BluetoothApi bluetoothApi = new BluetoothApi(node.mContext);
-        BluetoothPublish bluetoothPublish =  new BluetoothPublish(bluetoothApi);
-        BluetoothGet bluetoothGet =  new BluetoothGet(bluetoothApi);
+        BluetoothApi bluetoothApi           = new BluetoothApi(node.mContext);
+        BluetoothPublish bluetoothPublish   = new BluetoothPublish(bluetoothApi);
+        BluetoothGet bluetoothGet           = new BluetoothGet(bluetoothApi);
+        BluetoothSearch bluetoothSearch     = new BluetoothSearch(bluetoothApi);
 
-        // Link source Api(s) and destination Service(s)
-        // Requests received on the REST Api should use...
-//        node.registerPublishService(restApi, db);
-//        node.registerPublishService(restApi, httpPublish);
-//        node.registerPublishService(restApi, bluetoothPublish);
-//        node.registerGetService(restApi, db);
-//        node.registerGetService(restApi, httpGet);
-//        node.registerSearchService(restApi, db);
-//        node.registerSearchService(restApi, httpSearch);
-        // Requests received on the Bluetooth Api should use...
-        node.addLocalPublishService(bluetoothApi, db);
-        node.addLocalGetService(bluetoothApi, db);
-        node.addLocalSearchService(bluetoothApi, db);
+        // Link Api(s) to PublishService(s)
+        ApiToServiceMap<PublishService> publishMap = new ApiToServiceMap<PublishService>();
+        publishMap.addLocalService(Api.JAVA, db);
 
-        // Debug
-        node.addLocalPublishService(Api.JAVA, db);
-        node.addGetService(Api.JAVA, bluetoothGet);
+        // Link Api(s) to GetService(s)
+        ApiToServiceMap<GetService> getMap = new ApiToServiceMap<GetService>();
+        getMap.addLocalService(Api.JAVA, db);
+        getMap.addLocalService(bluetoothApi, db);
+        getMap.addRemoteService(Api.JAVA, bluetoothGet);
+
+        // Link Api(s) to SearchService(s)
+        ApiToServiceMap<SearchService> searchMap = new ApiToServiceMap<SearchService>();
+        searchMap.addLocalService(Api.JAVA, db);
+
+        // Set Controllers
+        node.setPublishController(new PublishController(publishMap));
+        node.setGetController(new GetController(getMap));
+        node.setSearchController(new SearchController(searchMap));
 
         // Start API(s)
-        node.mApiController.start();
+        Set<Api> usedApis = new HashSet<Api>();
+        usedApis.addAll(publishMap.getApis());
+        usedApis.addAll(getMap.getApis());
+        usedApis.addAll(searchMap.getApis());
+        for (Api api : usedApis) {
+            api.start();
+        }
+
     }
 
     public static void clear() {
 
         // TODO proper implementation
-        INSTANCE.mContext.deleteDatabase(DatabaseService.DATABASE_NAME);
-        FileUtils.deleteQuietly(new File(Environment.getExternalStorageDirectory(), "shared"));
+//        boolean dbDeleted = INSTANCE.mContext.deleteDatabase(DatabaseService.DATABASE_NAME);
+//        if (dbDeleted) {
+//            Log.i(TAG, "Database deleted");
+//        } else {
+//            Log.w(TAG, "Failed to delete database");
+//        }
+        new DatabaseService(INSTANCE.mContext).clearDatabase();
+
+        File cache = new File(Environment.getExternalStorageDirectory(), "shared");
+        boolean cacheDeleted = FileUtils.deleteQuietly(cache);
+        if (cacheDeleted) {
+            Log.i(TAG, "Cache deleted");
+        } else {
+            Log.w(TAG, "Failed to delete cache");
+        }
 
     }
 
@@ -158,9 +180,7 @@ public class Node {
         return INSTANCE.mRequestExecutor.submit(task);
     }
 
-    private void setApiController(ApiController apiController) {
-        mApiController = apiController;
-    }
+    // Controllers
 
     private void setPublishController(PublishController publishController) {
         mPublishController = publishController;
@@ -172,36 +192,6 @@ public class Node {
 
     private void setSearchController(SearchController searchController) {
         mSearchController = searchController;
-    }
-
-    private void addPublishService(Api source, PublishService destination) {
-        mApiController.addApi(source);
-        mPublishController.addPublishService(source, destination);
-    }
-
-    private void addGetService(Api source, GetService destination) {
-        mApiController.addApi(source);
-        mGetController.addGetService(source, destination);
-    }
-
-    private void addSearchService(Api source, SearchService destination) {
-        mApiController.addApi(source);
-        mSearchController.addSearchService(source, destination);
-    }
-
-    private void addLocalPublishService(Api source, PublishService destination) {
-        mApiController.addApi(source);
-        mPublishController.addLocalPublishService(source, destination);
-    }
-
-    private void addLocalGetService(Api source, GetService destination) {
-        mApiController.addApi(source);
-        mGetController.addLocalGetService(source, destination);
-    }
-
-    private void addLocalSearchService(Api source, SearchService destination) {
-        mApiController.addApi(source);
-        mSearchController.addLocalSearchService(source, destination);
     }
 
 }

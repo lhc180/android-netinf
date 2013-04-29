@@ -23,7 +23,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="android.netinf.streamer.MainActivity"
+            android:name="android.netinf.streamer.StreamerActivity"
             android:label="@string/app_name"
             android:screenOrientation="portrait" >
             <intent-filter>

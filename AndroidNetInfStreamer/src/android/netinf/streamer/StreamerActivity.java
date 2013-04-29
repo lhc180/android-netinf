@@ -1,21 +1,17 @@
 package android.netinf.streamer;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
-import android.net.Uri;
 import android.netinf.node.Node;
 import android.os.Bundle;
 import android.os.Environment;
@@ -29,20 +25,27 @@ import android.view.SurfaceView;
  * Useful links
  * http://developer.android.com/guide/topics/media/camera.html#capture-video
  */
-public class MainActivity extends Activity {
+public class StreamerActivity extends Activity {
 
-    public static final String TAG = MainActivity.class.getSimpleName();
+    public static final String TAG = StreamerActivity.class.getSimpleName();
+
+    public static final File CHUNK_FOLDER = new File(Environment.getExternalStorageDirectory(), "Chunks");
 
     /** Camera used to record the stream, not null implies recording. */
     private Camera mCamera;
     /** Surface used to show the preview of the stream. */
     private SurfaceView mSurface;
     /** Executor to run the Encoder. */
-    private ExecutorService mExecutor = Executors.newSingleThreadExecutor();
+    private ExecutorService mEncoderExecutor = Executors.newSingleThreadExecutor();
     /** Encoder used to encode the video. */
     private Encoder mEncoder;
     /** A callback handed to the Camera that receives each frame and encodes it using the Encoder. */
     private EncodingPreviewCallback mEncodingCallback;
+
+    /** Executor to run the Player. */
+    private ExecutorService mPlayerExecutor = Executors.newSingleThreadExecutor();
+    /** Player that downloads, merges and plays chunks, */
+    private Player mPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,31 +88,14 @@ public class MainActivity extends Activity {
     public void togglePlay() {
         Log.v(TAG, "togglePlay()");
 
-        File chunkFolder = new File(Environment.getExternalStorageDirectory(), "Chunks");
-        File file = null;
-
-        FileOutputStream out = null;
-        try {
-            // Delete old temp file
-            file = new File(chunkFolder, "joined.h264");
-            FileUtils.deleteQuietly(file);
-            // Create new temp file
-            out = FileUtils.openOutputStream(file);
-            FileUtils.copyFile(new File(chunkFolder, "00000.h264"), out);
-            FileUtils.copyFile(new File(chunkFolder, "00001.h264"), out);
-            out.flush();
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to create joined h264 file", e);
-        } finally {
-            IOUtils.closeQuietly(out);
+        if (mPlayer == null) {
+            mPlayer = new Player(this);
+            mPlayerExecutor.execute(mPlayer);
+        } else {
+            mPlayer.cancel();
+            mPlayer = null;
         }
 
-
-        Log.d(TAG, "Playing " + file.getAbsolutePath() + ", " + file.length() + " bytes");
-        Intent vlc = new Intent();
-        vlc.setAction(android.content.Intent.ACTION_VIEW);
-        vlc.setDataAndType(Uri.fromFile(file), "video/*");
-        startActivity(vlc);
     }
 
     public void delayedToggleRecord() {
@@ -175,7 +161,7 @@ public class MainActivity extends Activity {
         mEncoder = new Encoder();
         mEncoder.setChunkPublisher(new Publisher());
         mEncodingCallback = new EncodingPreviewCallback(mCamera, mEncoder);
-        mExecutor.execute(mEncoder);
+        mEncoderExecutor.execute(mEncoder);
         mCamera.setPreviewCallbackWithBuffer(mEncodingCallback);
         mCamera.setPreviewDisplay(mSurface.getHolder());                                        // 2
         mCamera.startPreview();                                                                 // 3
@@ -207,7 +193,10 @@ public class MainActivity extends Activity {
 
     public void clear() {
 
+        Log.i(TAG, "Deleting previously recorded chunks");
+
         Node.clear();
+        FileUtils.deleteQuietly(CHUNK_FOLDER);
 
     }
 

@@ -1,39 +1,21 @@
 package android.netinf.node.search;
 
-import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import android.netinf.node.api.Api;
+import android.netinf.common.ApiToServiceMap;
 import android.util.Log;
 
 public class SearchController implements SearchService {
 
     public static final String TAG = SearchController.class.getSimpleName();
 
-    private Map<Api, Set<SearchService>> mSearchServices;
-    private Map<Api, Set<SearchService>> mLocalSearchServices;
+    private ApiToServiceMap<SearchService> mServices;
 
-    public SearchController() {
-        mSearchServices = new HashMap<Api, Set<SearchService>>();
-        mLocalSearchServices = new HashMap<Api, Set<SearchService>>();
-    }
-
-    public void addSearchService(Api source, SearchService destination) {
-        if (!mSearchServices.containsKey(source)) {
-            mSearchServices.put(source, new LinkedHashSet<SearchService>());
-        }
-        mSearchServices.get(source).add(destination);
-    }
-
-    public void addLocalSearchService(Api source, SearchService destination) {
-        if (!mLocalSearchServices.containsKey(source)) {
-            mLocalSearchServices.put(source, new LinkedHashSet<SearchService>());
-        }
-        mLocalSearchServices.get(source).add(destination);
+    public SearchController(ApiToServiceMap<SearchService> services) {
+        mServices = services;
     }
 
     @Override
@@ -44,10 +26,10 @@ public class SearchController implements SearchService {
 
         // Get search services to be used
         Log.i(TAG, "Local SEARCH of " + search);
-        Set<SearchService> searchServices = new LinkedHashSet<SearchService>(mLocalSearchServices.get(search.getSource()));
+        Set<SearchService> searchServices = new LinkedHashSet<SearchService>(mServices.getLocalServices(search.getSource()));
         if (search.getHopLimit() > 0) {
             Log.i(TAG, "Remote SEARCH of " + search);
-            searchServices.addAll(mSearchServices.get(search.getSource()));
+            searchServices.addAll(mServices.getRemoteServices(search.getSource()));
         }
 
         final CountDownLatch pendingSearches = new CountDownLatch(searchServices.size());

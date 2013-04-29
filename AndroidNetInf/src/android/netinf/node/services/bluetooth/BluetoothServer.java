@@ -44,6 +44,8 @@ public class BluetoothServer implements Runnable {
     @Override
     public void run() {
 
+        try {
+
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 
         while (true) {
@@ -59,13 +61,21 @@ public class BluetoothServer implements Runnable {
                 socket = server.accept();
                 Log.i(TAG, adapter.getName() + " accepted a connection using UUID " + mUuid);
                 server.close();
+                server = null; // Trying to fix the Bluetooth resource leakage
                 if (socket != null) {
                     in = new DataInputStream(socket.getInputStream());
                     out = new DataOutputStream(socket.getOutputStream());
                     handleRequest(in, out);
                 }
             } catch (IOException e) {
-                Log.e(TAG, "Failed to handle request", e);
+                if (e.getMessage() != null && e.getMessage().contains("-1")) {
+                    // Workaround for Android 4.2.X Bluetooth Bug
+                    // http://code.google.com/p/android/issues/detail?id=41110
+                    Log.e(TAG, "(Debug) Failed to restart server because of Android 4.2.X bug");
+                    BluetoothRepair.needFix();
+                } else {
+                    Log.e(TAG, "Failed to handle request", e);
+                }
             } catch (JSONException e) {
                 Log.e(TAG, "Failed to handle request", e);
             } catch (NetInfException e) {
@@ -82,10 +92,17 @@ public class BluetoothServer implements Runnable {
 
         }
 
+        //Log.i(TAG, adapter.getName() + " no longer waiting for connections using UUID " + mUuid);
+
+        } catch (Throwable e) {
+            Log.wtf(TAG, "THIS SHOULD NOT HAPPEN D:", e);
+        }
+
     }
 
     private void handleRequest(DataInputStream in, DataOutputStream out)
             throws IOException, JSONException, NetInfException, InterruptedException, ExecutionException {
+        Log.v(TAG, "handleRequest()");
 
         JSONObject request = BluetoothCommon.readJson(in);
         if (request.getString("type").equals("publish")) {
@@ -99,7 +116,7 @@ public class BluetoothServer implements Runnable {
         }
 
         // TODO WAIT UNTIL WE KNOW RESPONSE READ?!
-
+        BluetoothCommon.readEos(in);
     }
 
     private void handlePublish(DataInputStream in, DataOutputStream out, JSONObject publishJo)
@@ -132,6 +149,7 @@ public class BluetoothServer implements Runnable {
 
     private void handleGet(DataInputStream in, DataOutputStream out, JSONObject jo)
             throws NetInfException, JSONException, IOException, InterruptedException, ExecutionException {
+        Log.v(TAG, "handleGet()");
 
         Ndo ndo = NetInfUtils.toNdo(jo);
         Log.i(TAG, "Bluetooth API received GET: " + ndo.getUri());

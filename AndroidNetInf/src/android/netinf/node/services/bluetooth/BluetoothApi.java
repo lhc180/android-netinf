@@ -48,6 +48,4 @@ public class BluetoothApi implements Api {
         mServerExecutor.shutdown();
     }
 
-
-
 }

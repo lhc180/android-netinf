@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -60,14 +61,25 @@ public class BluetoothGet implements GetService {
                 BluetoothCommon.write(jo, out);
 
                 // Read
-                return parseGetResponse(get, in);
+                return parseGetResponse(get, in, out);
 
             } catch (IOException e) {
-                Log.e(TAG, "GET to " + device.getName() + " failed", e);
+                if (e.getMessage() != null && e.getMessage().contains("-1")) {
+                    // Workaround for Android 4.2.X Bluetooth Bug
+                    // http://code.google.com/p/android/issues/detail?id=41110
+                    Log.e(TAG, "(Debug) GET to " + device.getName() + " failed because of Android 4.2.X bug");
+                    BluetoothRepair.needFix();
+                } else {
+                    Log.e(TAG, "GET to " + device.getName() + " failed", e);
+                }
             } catch (JSONException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
             } catch (NetInfException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
+            } finally {
+                IOUtils.closeQuietly(in);
+                IOUtils.closeQuietly(out);
+                IOUtils.closeQuietly(socket);
             }
 
         }
@@ -89,11 +101,14 @@ public class BluetoothGet implements GetService {
 
     }
 
-    private GetResponse parseGetResponse(Get get, DataInputStream in) throws IOException, JSONException, NetInfException {
+    private GetResponse parseGetResponse(Get get, DataInputStream in, DataOutputStream out)
+            throws IOException, JSONException, NetInfException {
 
         JSONObject jo = BluetoothCommon.readJson(in);
 
         if (jo.getInt("status") != NetInfStatus.OK.getCode()) {
+            // Confirm that we got the response
+            BluetoothCommon.writeEos(out);
             return new GetResponse(get, NetInfStatus.FAILED);
         }
 
@@ -110,6 +125,9 @@ public class BluetoothGet implements GetService {
             byte[] octets = BluetoothCommon.readFile(in);
             get.getNdo().cache(octets);
         }
+
+        // Confirm that we got the response
+        BluetoothCommon.writeEos(out);
 
         return new GetResponse(get, NetInfStatus.OK, builder.build());
 

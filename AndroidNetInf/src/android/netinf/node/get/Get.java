@@ -34,6 +34,10 @@ public class Get extends Request {
             mNdo = ndo;
         }
 
+        public Builder(Ndo ndo) {
+            this(Api.JAVA, ndo);
+        }
+
         public Builder id(String id) { mId = id; return this; }
         public Builder hoplimit(int hops) { mHopLimit = hops; return this; }
         public Builder consumeHop() { mHopLimit = Math.max(mHopLimit - 1, 0); return this; }

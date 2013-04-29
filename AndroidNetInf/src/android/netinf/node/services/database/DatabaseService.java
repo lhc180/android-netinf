@@ -47,6 +47,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
 
     @Override
     public PublishResponse perform(Publish publish) {
+
         Log.i(TAG, "Database received PUBLISH: " + publish);
         Ndo ndo = publish.getNdo();
         // TODO Don't just overwrite
@@ -63,6 +64,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
         //}
         Log.i(TAG, "PUBLISH to database succeeded");
         return new PublishResponse(publish, NetInfStatus.OK); // TODO check if actually inserted
+
     }
 
     @Override
@@ -108,7 +110,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_NDO, columns, selection, selectionArgs, null, null, null);
         cursor.moveToFirst();
-
         byte[] blob = null;
         if (!cursor.isAfterLast()) {
             blob = cursor.getBlob(cursor.getColumnIndex(COLUMN_NDO));
@@ -129,7 +130,6 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
 
         SQLiteDatabase db = getWritableDatabase();
         db.insert(TABLE_NDO, null, values);
-        db.close();
     }
 
     private int delete(Ndo ndo) {
@@ -137,12 +137,12 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
         String whereClause = COLUMN_HASH_ALG + "=? AND " + COLUMN_HASH + "=?";
         String[] whereArgs = new String[] {ndo.getAlgorithm(), ndo.getHash()};
         int deleted = db.delete(TABLE_NDO, whereClause , whereArgs);
-        db.close();
         return deleted;
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+        Log.i(TAG, "(Re)creating table(s)...");
         String createTable = "CREATE TABLE " + TABLE_NDO + " ("
                 + COLUMN_HASH_ALG + " " + TEXT + " " + NOT_NULL + ", "
                 + COLUMN_HASH + " " + TEXT + " " + NOT_NULL + ", "
@@ -161,6 +161,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     }
 
     private void clearDatabase(SQLiteDatabase db) {
+        Log.i(TAG, "Dropping table(s)...");
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NDO);
         onCreate(db);
     }

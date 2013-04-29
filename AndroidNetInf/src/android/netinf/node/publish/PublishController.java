@@ -1,40 +1,20 @@
 package android.netinf.node.publish;
 
-import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
+import android.netinf.common.ApiToServiceMap;
 import android.netinf.common.NetInfStatus;
-import android.netinf.node.api.Api;
 import android.util.Log;
 
 public class PublishController implements PublishService {
 
     public static final String TAG = PublishController.class.getSimpleName();
 
-    private Map<Api, Set<PublishService>> mPublishServices;
-    private Map<Api, Set<PublishService>> mLocalPublishServices;
+    private ApiToServiceMap<PublishService> mServices;
 
-    public PublishController() {
-        mPublishServices = new HashMap<Api, Set<PublishService>>();
-        mLocalPublishServices = new HashMap<Api, Set<PublishService>>();
-    }
-
-    public void addPublishService(Api source, PublishService destination) {
-        if (!mPublishServices.containsKey(source)) {
-            mPublishServices.put(source, new LinkedHashSet<PublishService>());
-        }
-        mPublishServices.get(source).add(destination);
-    }
-
-    public void addLocalPublishService(Api source, PublishService destination) {
-        if (!mLocalPublishServices.containsKey(source)) {
-            mLocalPublishServices.put(source, new LinkedHashSet<PublishService>());
-        }
-        mLocalPublishServices.get(source).add(destination);
+    public PublishController(ApiToServiceMap<PublishService> services) {
+        mServices = services;
     }
 
     @Override
@@ -46,13 +26,13 @@ public class PublishController implements PublishService {
         List<PublishResponse> responses = new LinkedList<PublishResponse>();
 
         // Check local services
-        for (PublishService publishService : mLocalPublishServices.get(publish.getSource())) {
+        for (PublishService publishService : mServices.getLocalServices(publish.getSource())) {
             responses.add(publishService.perform(publish));
         }
 
         // Check other services
         if (publish.getHopLimit() > 0) {
-            for (PublishService publishService : mPublishServices.get(publish.getSource())) {
+            for (PublishService publishService : mServices.getRemoteServices(publish.getSource())) {
                 responses.add(publishService.perform(publish));
             }
         }

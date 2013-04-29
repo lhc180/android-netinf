@@ -1,15 +1,11 @@
 package android.netinf.node.get;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import android.netinf.common.Ndo;
+import android.netinf.common.ApiToServiceMap;
 import android.netinf.common.NetInfStatus;
-import android.netinf.node.api.Api;
+import android.netinf.node.Node;
+import android.netinf.node.publish.Publish;
 import android.util.Log;
 
 public class GetController implements GetService {
@@ -18,28 +14,12 @@ public class GetController implements GetService {
 
     public static final String TAG = GetController.class.getSimpleName();
 
-    private Map<Api, Set<GetService>> mGetServices;
-    private Map<Api, Set<GetService>> mLocalGetServices;
-    private Map<Ndo, Set<Get>> mPendingGets;
+    private ApiToServiceMap<GetService> mServices;
+    private RequestAggregator mRequestAggregator;
 
-    public GetController() {
-        mGetServices = new HashMap<Api, Set<GetService>>();
-        mLocalGetServices = new HashMap<Api, Set<GetService>>();
-        mPendingGets = new HashMap<Ndo, Set<Get>>();
-    }
-
-    public void addGetService(Api source, GetService destination) {
-        if (!mGetServices.containsKey(source)) {
-            mGetServices.put(source, new LinkedHashSet<GetService>());
-        }
-        mGetServices.get(source).add(destination);
-    }
-
-    public void addLocalGetService(Api source, GetService destination) {
-        if (!mLocalGetServices.containsKey(source)) {
-            mLocalGetServices.put(source, new LinkedHashSet<GetService>());
-        }
-        mLocalGetServices.get(source).add(destination);
+    public GetController(ApiToServiceMap<GetService> services) {
+        mServices = services;
+        mRequestAggregator = new RequestAggregator();
     }
 
     @Override
@@ -48,31 +28,14 @@ public class GetController implements GetService {
         // Reduce hop limit
         get = new Get.Builder(get).consumeHop().build();
 
+        // Try to aggregate the Get
+        boolean aggregated = mRequestAggregator.aggregate(get);
 
-        // Determine if this get should be aggregated, if not setup for coming aggregation
-        // Synchronized because otherwise two threads might perform the GET
-        boolean aggregate = false;
-        synchronized (mPendingGets) {
-            aggregate = mPendingGets.containsKey(get.getNdo());
-            if (aggregate) {
-                // We should aggregate, add to set of aggregated requests
-                mPendingGets.get(get.getNdo()).add(get);
-            } else {
-                // We should not aggregate, create new empty set of aggregated requests
-                mPendingGets.put(get.getNdo(), new HashSet<Get>());
-            }
-        }
-
-        if (aggregate) {
+        if (aggregated) {
 
             Log.i(TAG, "Aggregated GET of " + get);
-
             GetResponse response = get.aggregate(TIMEOUT, TimeUnit.MILLISECONDS);
-            // The response to the aggregated get could be submitted here but in that case we just ignore it
-            synchronized (mPendingGets) {
-                mPendingGets.get(get.getNdo()).remove(get);
-            }
-
+            mRequestAggregator.done(get);
             Log.i(TAG, "Aggregated GET of " + get + " done. STATUS " + response.getStatus());
             return response;
 
@@ -83,7 +46,7 @@ public class GetController implements GetService {
 
             // First check local services
             Log.i(TAG, "Local GET of " + get);
-            for (GetService getService : mLocalGetServices.get(get.getSource())) {
+            for (GetService getService : mServices.getLocalServices(get.getSource())) {
                 response = getService.perform(get);
                 if (response.getStatus().isSuccess()) {
                     break;
@@ -93,7 +56,7 @@ public class GetController implements GetService {
             // Then check other services as needed
             if (response.getStatus().isError() && get.getHopLimit() > 0) {
                 Log.i(TAG, "Remote GET of " + get);
-                for (GetService getService : mGetServices.get(get.getSource())) {
+                for (GetService getService : mServices.getRemoteServices(get.getSource())) {
                     response = getService.perform(get);
                     if (response.getStatus().isSuccess()) {
                         break;
@@ -103,14 +66,14 @@ public class GetController implements GetService {
 
             // Notify all waiting aggregated requests
             // synchronized so no new aggregated requests are added while responding
-            synchronized (mPendingGets) {
-                for (Get aggregatedGet : mPendingGets.get(get.getNdo())) {
-                    aggregatedGet.submitAggregatedResponse(response);
-                }
-                mPendingGets.remove(get.getNdo());
+            mRequestAggregator.notify(get, response);
+
+            // Publish the received data locally
+            if (response.getStatus().isSuccess()) {
+                Publish publish = new Publish.Builder(response.getNdo()).build();
+                Node.submit(publish);
             }
 
-            //
             Log.i(TAG, "GET of " + get + " done. STATUS " + response.getStatus());
             return response;
 

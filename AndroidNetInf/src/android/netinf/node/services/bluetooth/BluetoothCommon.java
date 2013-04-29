@@ -55,11 +55,32 @@ public class BluetoothCommon {
             for (int attempt = 1; attempt <= ATTEMPTS_PER_UUID; attempt++) {
                 try {
                     Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " trying to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
-                    socket = device.createRfcommSocketToServiceRecord(uuid);
+                    // This worked when this was an app instead of a library
+                     socket = device.createRfcommSocketToServiceRecord(uuid);
+                    // For some reason it started throwing the IOException "Service discovery failed"
+                    // A probable reason is that the Bluetooth servers are not started/listening for some reason
+                    // Did all Api(s) get added to the ApiController and started?
+                    // http://stackoverflow.com/questions/3397071/service-discovery-failed-exception-using-bluetooth-on-android
+                    // Work around, no idea why it works
+//                    try {
+//                        Log.d(TAG, "(Debug) Using 'Service discovery failed' workaround");
+//                        Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
+//                        socket = (BluetoothSocket) m.invoke(device, 1);
+//                    } catch (NoSuchMethodException e) {
+//                        Log.wtf(TAG, "Bluetooth connection workaround failed", e);
+//                    } catch (InvocationTargetException e) {
+//                        Log.wtf(TAG, "Bluetooth connection workaround failed", e);
+//                    } catch (IllegalArgumentException e) {
+//                        Log.wtf(TAG, "Bluetooth connection workaround failed", e);
+//                    } catch (IllegalAccessException e) {
+//                        Log.wtf(TAG, "Bluetooth connection workaround failed", e);
+//                    }
+
                     BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
                     socket.connect();
                 } catch (IOException e) {
                     Log.w(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
+                    Log.d(TAG, "It failed because:", e);
                     continue;
                 }
                 break;
@@ -91,6 +112,25 @@ public class BluetoothCommon {
 
     }
 
+    public static void readEos(DataInputStream bluetoothIn) {
+        try {
+            Log.d(TAG, "Reading until 'EOS'...");
+            int b = 0;
+            do {
+                b = bluetoothIn.readInt();
+                Log.d(TAG, "(Debug) b = " + b);
+            } while (b != -1);
+            Log.d(TAG, "Read 'EOS'!");
+        } catch (Throwable e) {
+            Log.e(TAG, "Failed to read 'EOS'", e);
+        }
+    }
+
+    public static void writeEos(DataOutputStream bluetoothOut) throws IOException {
+        Log.d(TAG, "Wrote 'EOS'");
+        bluetoothOut.writeInt(-1);
+    }
+
     public static void write(JSONObject jo, DataOutputStream bluetoothOut) throws IOException {
         Log.d(TAG, "Wrote: " + jo.toString());
         byte[] buffer = jo.toString().getBytes("UTF-8");
@@ -111,7 +151,14 @@ public class BluetoothCommon {
         // Read appropriate part from the Bluetooth stream
         int length = bluetoothIn.readInt();
         byte[] buffer = new byte[length];
-        bluetoothIn.read(buffer);
+
+        int offset = 0;
+        while (offset < length) {
+            offset += bluetoothIn.read(buffer, offset, length - offset);
+            Log.d(TAG, "(Debug) Transfered " + offset + "/" + length + " bytes");
+        }
+//        bluetoothIn.read(buffer);
+
         return buffer;
     }
 
