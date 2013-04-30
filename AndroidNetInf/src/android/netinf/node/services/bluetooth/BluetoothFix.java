@@ -5,9 +5,9 @@ import java.util.concurrent.CountDownLatch;
 import android.bluetooth.BluetoothAdapter;
 import android.util.Log;
 
-public class BluetoothRepair {
+public class BluetoothFix {
 
-    public static final String TAG = BluetoothRepair.class.getSimpleName();
+    public static final String TAG = BluetoothFix.class.getSimpleName();
 
     private enum State {
         OK,
@@ -17,6 +17,13 @@ public class BluetoothRepair {
     private static State mState = State.OK;
     private static CountDownLatch mSignal;
 
+    /**
+     * Android 4.2.X introduced a bug where Bluetooth resources are not released properly.
+     * This seems to result in BluetoothAdapter.listenUsingRfcommWithServiceRecord(...)
+     * and BluetoothSocket.connect() throwing IOExceptions with error code -1.
+     * Restarting Bluetooth seems to be the only current work around.
+     * http://code.google.com/p/android/issues/detail?id=41110
+     */
     public static void needFix() {
 
         CountDownLatch signal;
@@ -46,7 +53,7 @@ public class BluetoothRepair {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Log.d(TAG, "(Debug) Fixing Bluetooth (Android 4.2.x Bug)...");
+                Log.d(TAG, "(Debug) Fixing Bluetooth (Android 4.2.X Bug)...");
                 BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 
                 Log.d(TAG, "(Debug) Disabling Bluetooth...");

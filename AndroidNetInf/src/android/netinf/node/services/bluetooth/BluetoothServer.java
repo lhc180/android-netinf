@@ -56,10 +56,13 @@ public class BluetoothServer implements Runnable {
             DataOutputStream out = null;
 
             try {
+                Log.d(TAG, "listen");
                 BluetoothServerSocket server = adapter.listenUsingRfcommWithServiceRecord("android.netinf", mUuid);
                 Log.i(TAG, adapter.getName() + " waiting for connections using UUID " + mUuid);
+                Log.d(TAG, "accept");
                 socket = server.accept();
                 Log.i(TAG, adapter.getName() + " accepted a connection using UUID " + mUuid);
+                Log.d(TAG, "close");
                 server.close();
                 server = null; // Trying to fix the Bluetooth resource leakage
                 if (socket != null) {
@@ -70,9 +73,8 @@ public class BluetoothServer implements Runnable {
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().contains("-1")) {
                     // Workaround for Android 4.2.X Bluetooth Bug
-                    // http://code.google.com/p/android/issues/detail?id=41110
                     Log.e(TAG, "(Debug) Failed to restart server because of Android 4.2.X bug");
-                    BluetoothRepair.needFix();
+                    BluetoothFix.needFix();
                 } else {
                     Log.e(TAG, "Failed to handle request", e);
                 }

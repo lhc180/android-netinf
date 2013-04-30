@@ -64,14 +64,7 @@ public class BluetoothGet implements GetService {
                 return parseGetResponse(get, in, out);
 
             } catch (IOException e) {
-                if (e.getMessage() != null && e.getMessage().contains("-1")) {
-                    // Workaround for Android 4.2.X Bluetooth Bug
-                    // http://code.google.com/p/android/issues/detail?id=41110
-                    Log.e(TAG, "(Debug) GET to " + device.getName() + " failed because of Android 4.2.X bug");
-                    BluetoothRepair.needFix();
-                } else {
-                    Log.e(TAG, "GET to " + device.getName() + " failed", e);
-                }
+                Log.e(TAG, "GET to " + device.getName() + " failed", e);
             } catch (JSONException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
             } catch (NetInfException e) {

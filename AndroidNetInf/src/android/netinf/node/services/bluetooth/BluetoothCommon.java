@@ -55,33 +55,25 @@ public class BluetoothCommon {
             for (int attempt = 1; attempt <= ATTEMPTS_PER_UUID; attempt++) {
                 try {
                     Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " trying to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
-                    // This worked when this was an app instead of a library
-                     socket = device.createRfcommSocketToServiceRecord(uuid);
-                    // For some reason it started throwing the IOException "Service discovery failed"
-                    // A probable reason is that the Bluetooth servers are not started/listening for some reason
+                    Log.d(TAG, "create");
+                    socket = device.createRfcommSocketToServiceRecord(uuid);
+                    // IOException "Service discovery failed"?
                     // Did all Api(s) get added to the ApiController and started?
-                    // http://stackoverflow.com/questions/3397071/service-discovery-failed-exception-using-bluetooth-on-android
-                    // Work around, no idea why it works
-//                    try {
-//                        Log.d(TAG, "(Debug) Using 'Service discovery failed' workaround");
-//                        Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
-//                        socket = (BluetoothSocket) m.invoke(device, 1);
-//                    } catch (NoSuchMethodException e) {
-//                        Log.wtf(TAG, "Bluetooth connection workaround failed", e);
-//                    } catch (InvocationTargetException e) {
-//                        Log.wtf(TAG, "Bluetooth connection workaround failed", e);
-//                    } catch (IllegalArgumentException e) {
-//                        Log.wtf(TAG, "Bluetooth connection workaround failed", e);
-//                    } catch (IllegalAccessException e) {
-//                        Log.wtf(TAG, "Bluetooth connection workaround failed", e);
-//                    }
-
+                    Log.d(TAG, "cancel");
                     BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
+                    Log.d(TAG, "connect");
                     socket.connect();
                 } catch (IOException e) {
-                    Log.w(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
-                    Log.d(TAG, "It failed because:", e);
-                    continue;
+                    if (e.getMessage() != null && e.getMessage().contains("-1")) {
+                        // Workaround for Android 4.2.X Bluetooth Bug
+                        Log.e(TAG, "(Debug) " + BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + "because of Android 4.2.X bug");
+                        BluetoothFix.needFix();
+                        continue;
+                    } else {
+                        Log.w(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
+                        Log.d(TAG, "It failed because:", e);
+                        continue;
+                    }
                 }
                 break;
             }
@@ -100,11 +92,11 @@ public class BluetoothCommon {
 
         String result = "<Failed to convert message to string>";
         try {
-        File file = new File(Environment.getExternalStorageDirectory() + "/message.txt");
-        FileOutputStream fis = new FileOutputStream(file);
-        MessageWriter writer = new DefaultMessageWriter();
-        writer.writeMessage(message, fis);
-        return FileUtils.readFileToString(file);
+            File file = new File(Environment.getExternalStorageDirectory() + "/message.txt");
+            FileOutputStream fis = new FileOutputStream(file);
+            MessageWriter writer = new DefaultMessageWriter();
+            writer.writeMessage(message, fis);
+            return FileUtils.readFileToString(file);
         } catch (IOException e) {
             Log.wtf(TAG, "Failed to convert message to string", e);
         }
@@ -118,7 +110,7 @@ public class BluetoothCommon {
             int b = 0;
             do {
                 b = bluetoothIn.readInt();
-                Log.d(TAG, "(Debug) b = " + b);
+                // Log.d(TAG, "(Debug) b = " + b);
             } while (b != -1);
             Log.d(TAG, "Read 'EOS'!");
         } catch (Throwable e) {
@@ -157,7 +149,7 @@ public class BluetoothCommon {
             offset += bluetoothIn.read(buffer, offset, length - offset);
             Log.d(TAG, "(Debug) Transfered " + offset + "/" + length + " bytes");
         }
-//        bluetoothIn.read(buffer);
+        //        bluetoothIn.read(buffer);
 
         return buffer;
     }
