@@ -66,7 +66,7 @@ public class BluetoothCommon {
                 } catch (IOException e) {
                     if (e.getMessage() != null && e.getMessage().contains("-1")) {
                         // Workaround for Android 4.2.X Bluetooth Bug
-                        Log.e(TAG, "(Debug) " + BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + "because of Android 4.2.X bug");
+                        Log.e(TAG, "(Debug) " + BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " because of Android 4.2.X bug");
                         BluetoothFix.needFix();
                         continue;
                     } else {

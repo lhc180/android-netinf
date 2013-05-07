@@ -10,7 +10,9 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.io.FileUtils;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.netinf.common.ApiToServiceMap;
 import android.netinf.node.api.Api;
 import android.netinf.node.get.Get;
@@ -51,19 +53,39 @@ public class Node {
     private GetController mGetController;
     private SearchController mSearchController;
 
-    // TODO what is a good default choice?
-//    private ExecutorService mRequestExecutor = Executors.newCachedThreadPool();
-    private ExecutorService mRequestExecutor = Executors.newFixedThreadPool(5);
+    // TODO what is a good choice?
+    private ExecutorService mRequestExecutor = Executors.newCachedThreadPool();
+//    private ExecutorService mRequestExecutor = Executors.newFixedThreadPool(5);
 
     private Node() {
 
     }
 
-    public static void start(Context context) {
+    public static void start(Context context,
+            ApiToServiceMap<PublishService> publishServices,
+            ApiToServiceMap<GetService> getServices,
+            ApiToServiceMap<SearchService> searchServices) {
 
         // Setup Node
         Node node = INSTANCE;
         node.mContext = context;
+        node.mPublishController = new PublishController(publishServices);
+        node.mGetController = new GetController(getServices);
+        node.mSearchController = new SearchController(searchServices);
+
+        // Start API(s)
+        Set<Api> usedApis = new HashSet<Api>();
+        usedApis.addAll(publishServices.getApis());
+        usedApis.addAll(getServices.getApis());
+        usedApis.addAll(searchServices.getApis());
+        for (Api api : usedApis) {
+            api.start();
+        }
+
+    }
+
+
+    public static void start(Context context) {
 
         // Create Api(s) and Service(s)
 
@@ -71,7 +93,7 @@ public class Node {
         RestApi restApi                     = RestApi.getInstance();
 
         // Database
-        DatabaseService db                  = new DatabaseService(node.mContext);
+        DatabaseService db                  = new DatabaseService(context);
 
         // HTTP CL
         HttpPublishService httpPublish      = new HttpPublishService();
@@ -79,50 +101,44 @@ public class Node {
         HttpSearchService httpSearch        = new HttpSearchService();
 
         // Bluetooth CL
-        BluetoothApi bluetoothApi           = new BluetoothApi(node.mContext);
+        BluetoothApi bluetoothApi           = new BluetoothApi(context);
         BluetoothPublish bluetoothPublish   = new BluetoothPublish(bluetoothApi);
         BluetoothGet bluetoothGet           = new BluetoothGet(bluetoothApi);
         BluetoothSearch bluetoothSearch     = new BluetoothSearch(bluetoothApi);
 
         // Link Api(s) to PublishService(s)
-        ApiToServiceMap<PublishService> publishMap = new ApiToServiceMap<PublishService>();
-        publishMap.addLocalService(Api.JAVA, db);
+        ApiToServiceMap<PublishService> publishServices = new ApiToServiceMap<PublishService>();
+        publishServices.addLocalService(Api.JAVA, db);
 
         // Link Api(s) to GetService(s)
-        ApiToServiceMap<GetService> getMap = new ApiToServiceMap<GetService>();
-        getMap.addLocalService(Api.JAVA, db);
-        getMap.addLocalService(bluetoothApi, db);
-        getMap.addRemoteService(Api.JAVA, bluetoothGet);
+        ApiToServiceMap<GetService> getServices = new ApiToServiceMap<GetService>();
+        getServices.addLocalService(Api.JAVA, db);
+        getServices.addLocalService(bluetoothApi, db);
+        getServices.addRemoteService(Api.JAVA, bluetoothGet);
 
         // Link Api(s) to SearchService(s)
-        ApiToServiceMap<SearchService> searchMap = new ApiToServiceMap<SearchService>();
-        searchMap.addLocalService(Api.JAVA, db);
+        ApiToServiceMap<SearchService> searchServices = new ApiToServiceMap<SearchService>();
+        searchServices.addLocalService(Api.JAVA, db);
 
-        // Set Controllers
-        node.setPublishController(new PublishController(publishMap));
-        node.setGetController(new GetController(getMap));
-        node.setSearchController(new SearchController(searchMap));
+        // Start Node
+        start(context, publishServices, getServices, searchServices);
 
-        // Start API(s)
-        Set<Api> usedApis = new HashSet<Api>();
-        usedApis.addAll(publishMap.getApis());
-        usedApis.addAll(getMap.getApis());
-        usedApis.addAll(searchMap.getApis());
-        for (Api api : usedApis) {
-            api.start();
-        }
+    }
 
+    public static Context getContext() {
+        return INSTANCE.mContext;
+    }
+
+    public static void showPreferences(Activity activity) {
+        Intent intent = new Intent(activity, SettingsActivity.class);
+        activity.startActivity(intent);
     }
 
     public static void clear() {
 
         // TODO proper implementation
-//        boolean dbDeleted = INSTANCE.mContext.deleteDatabase(DatabaseService.DATABASE_NAME);
-//        if (dbDeleted) {
-//            Log.i(TAG, "Database deleted");
-//        } else {
-//            Log.w(TAG, "Failed to delete database");
-//        }
+        // Context.deleteDatabase() does not seem to remove the database until the app is restarted
+        // http://code.google.com/p/android/issues/detail?id=13727
         new DatabaseService(INSTANCE.mContext).clearDatabase();
 
         File cache = new File(Environment.getExternalStorageDirectory(), "shared");
@@ -178,20 +194,6 @@ public class Node {
 
         // Submit the Callable to the Node's ExecutorService
         return INSTANCE.mRequestExecutor.submit(task);
-    }
-
-    // Controllers
-
-    private void setPublishController(PublishController publishController) {
-        mPublishController = publishController;
-    }
-
-    private void setGetController(GetController getController) {
-        mGetController = getController;
-    }
-
-    private void setSearchController(SearchController searchController) {
-        mSearchController = searchController;
     }
 
 }

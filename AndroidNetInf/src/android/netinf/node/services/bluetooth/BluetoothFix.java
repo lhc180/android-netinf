@@ -82,7 +82,7 @@ public class BluetoothFix {
                     mState = State.OK;
                     mSignal.countDown();
                 }
-                Log.d(TAG, "(Debug) Bluetooth repair complete!");
+                Log.d(TAG, "(Debug) Bluetooth fix complete!");
             }
         }).start();
 

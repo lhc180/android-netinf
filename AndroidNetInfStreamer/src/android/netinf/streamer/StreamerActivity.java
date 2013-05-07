@@ -80,6 +80,9 @@ public class StreamerActivity extends Activity {
             case R.id.menu_clear:
                 clear();
                 return true;
+            case R.id.menu_preference:
+                Node.showPreferences(this);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
