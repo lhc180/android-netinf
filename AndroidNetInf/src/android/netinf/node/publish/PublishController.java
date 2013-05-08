@@ -5,6 +5,8 @@ import java.util.List;
 
 import android.netinf.common.ApiToServiceMap;
 import android.netinf.common.NetInfStatus;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
 import android.util.Log;
 
 public class PublishController implements PublishService {

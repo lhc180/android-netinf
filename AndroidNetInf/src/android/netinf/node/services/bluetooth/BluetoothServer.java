@@ -19,13 +19,13 @@ import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfStatus;
 import android.netinf.common.NetInfUtils;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
+import android.netinf.messages.Search;
+import android.netinf.messages.SearchResponse;
 import android.netinf.node.Node;
-import android.netinf.node.get.Get;
-import android.netinf.node.get.GetResponse;
-import android.netinf.node.publish.Publish;
-import android.netinf.node.publish.PublishResponse;
-import android.netinf.node.search.Search;
-import android.netinf.node.search.SearchResponse;
 import android.util.Log;
 
 
@@ -139,11 +139,12 @@ public class BluetoothServer implements Runnable {
         }
 
         Publish publish = publishBuilder.build();
+
         PublishResponse response = Node.submit(publish).get();
 
         // Create publish response
         JSONObject responseJo = new JSONObject();
-        responseJo.put("msgid", response.getId());
+        responseJo.put("msgid", response.getRequest().getId());
         responseJo.put("status", response.getStatus().getCode());
         BluetoothCommon.write(responseJo, out);
 
@@ -165,7 +166,7 @@ public class BluetoothServer implements Runnable {
 
         // Create get response
         JSONObject responseJo = new JSONObject();
-        responseJo.put("msgid", response.getId());
+        responseJo.put("msgid", response.getRequest().getId());
 
         if (response.getStatus().isError()) {
             responseJo.put("status", NetInfStatus.FAILED.getCode());
@@ -209,7 +210,7 @@ public class BluetoothServer implements Runnable {
 
         // Create search response
         JSONObject responseJo = new JSONObject();
-        responseJo.put("msgid", response.getId());
+        responseJo.put("msgid", response.getRequest().getId());
 
         JSONArray results = new JSONArray();
         responseJo.put("results", results);

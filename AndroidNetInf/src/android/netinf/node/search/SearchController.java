@@ -6,6 +6,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import android.netinf.common.ApiToServiceMap;
+import android.netinf.messages.Search;
+import android.netinf.messages.SearchResponse;
 import android.util.Log;
 
 public class SearchController implements SearchService {

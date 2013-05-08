@@ -15,9 +15,9 @@ import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
+import android.netinf.messages.Search;
+import android.netinf.messages.SearchResponse;
 import android.netinf.node.Node;
-import android.netinf.node.search.Search;
-import android.netinf.node.search.SearchResponse;
 import android.util.Log;
 
 public class RestSearchResource extends ServerResource {

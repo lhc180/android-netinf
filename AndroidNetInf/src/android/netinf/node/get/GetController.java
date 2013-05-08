@@ -4,8 +4,10 @@ import java.util.concurrent.TimeUnit;
 
 import android.netinf.common.ApiToServiceMap;
 import android.netinf.common.NetInfStatus;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
+import android.netinf.messages.Publish;
 import android.netinf.node.Node;
-import android.netinf.node.publish.Publish;
 import android.util.Log;
 
 public class GetController implements GetService {

@@ -15,8 +15,8 @@ import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfStatus;
 import android.netinf.common.NetInfUtils;
-import android.netinf.node.search.Search;
-import android.netinf.node.search.SearchResponse;
+import android.netinf.messages.Search;
+import android.netinf.messages.SearchResponse;
 import android.netinf.node.search.SearchService;
 import android.util.Log;
 

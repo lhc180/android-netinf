@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 
 import android.netinf.common.Ndo;
+import android.netinf.messages.Publish;
 import android.netinf.node.Node;
-import android.netinf.node.publish.Publish;
 import android.util.Log;
 
 public class Publisher {

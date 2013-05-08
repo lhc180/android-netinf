@@ -1,8 +1,7 @@
-package android.netinf.node.publish;
+package android.netinf.messages;
 
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfUtils;
-import android.netinf.common.Request;
 import android.netinf.node.api.Api;
 
 public class Publish extends Request {

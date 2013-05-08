@@ -14,8 +14,8 @@ import android.bluetooth.BluetoothSocket;
 import android.netinf.common.Locator;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
-import android.netinf.node.publish.Publish;
-import android.netinf.node.publish.PublishResponse;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
 import android.netinf.node.publish.PublishService;
 import android.util.Log;
 

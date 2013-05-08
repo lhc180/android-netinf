@@ -1,15 +1,14 @@
-package android.netinf.node.get;
+package android.netinf.messages;
 
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
-import android.netinf.common.Response;
 
 public class GetResponse extends Response {
 
     private final Ndo mNdo;
 
     public GetResponse(Get get, NetInfStatus status, Ndo ndo) {
-        super(get.getId(), status);
+        super(get, status);
         mNdo = ndo;
     }
 
@@ -17,7 +16,15 @@ public class GetResponse extends Response {
         this(get, status, null);
     }
 
+    @Override
+    public Get getRequest() {
+        return (Get) super.getRequest();
+    }
+
     public Ndo getNdo() {
+        if (mNdo == null) {
+            throw new IllegalStateException("getNdo() called on the response of a failed GET request");
+        }
         return mNdo;
     }
 

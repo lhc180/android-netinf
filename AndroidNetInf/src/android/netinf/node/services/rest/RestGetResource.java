@@ -12,9 +12,9 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ServerResource;
 
 import android.netinf.common.Ndo;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
 import android.netinf.node.Node;
-import android.netinf.node.get.Get;
-import android.netinf.node.get.GetResponse;
 import android.util.Log;
 
 public class RestGetResource extends ServerResource {

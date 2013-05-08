@@ -15,8 +15,8 @@ import android.netinf.common.Locator;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfStatus;
-import android.netinf.node.get.Get;
-import android.netinf.node.get.GetResponse;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
 import android.netinf.node.get.GetService;
 import android.util.Log;
 

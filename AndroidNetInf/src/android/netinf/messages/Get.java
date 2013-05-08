@@ -1,4 +1,4 @@
-package android.netinf.node.get;
+package android.netinf.messages;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 import android.netinf.common.NetInfUtils;
-import android.netinf.common.Request;
 import android.netinf.node.api.Api;
 import android.util.Log;
 

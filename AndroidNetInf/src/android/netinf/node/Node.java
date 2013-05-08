@@ -2,6 +2,8 @@ package android.netinf.node;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -14,18 +16,22 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.netinf.common.ApiToServiceMap;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
+import android.netinf.messages.Search;
+import android.netinf.messages.SearchResponse;
 import android.netinf.node.api.Api;
-import android.netinf.node.get.Get;
 import android.netinf.node.get.GetController;
-import android.netinf.node.get.GetResponse;
 import android.netinf.node.get.GetService;
-import android.netinf.node.publish.Publish;
+import android.netinf.node.logging.LogCatLogger;
+import android.netinf.node.logging.LogController;
+import android.netinf.node.logging.LogEntry;
+import android.netinf.node.logging.LogService;
 import android.netinf.node.publish.PublishController;
-import android.netinf.node.publish.PublishResponse;
 import android.netinf.node.publish.PublishService;
-import android.netinf.node.search.Search;
 import android.netinf.node.search.SearchController;
-import android.netinf.node.search.SearchResponse;
 import android.netinf.node.search.SearchService;
 import android.netinf.node.services.bluetooth.BluetoothApi;
 import android.netinf.node.services.bluetooth.BluetoothGet;
@@ -52,6 +58,7 @@ public class Node {
     private PublishController mPublishController;
     private GetController mGetController;
     private SearchController mSearchController;
+    private LogController mLogController;
 
     // TODO what is a good choice?
     private ExecutorService mRequestExecutor = Executors.newCachedThreadPool();
@@ -64,7 +71,8 @@ public class Node {
     public static void start(Context context,
             ApiToServiceMap<PublishService> publishServices,
             ApiToServiceMap<GetService> getServices,
-            ApiToServiceMap<SearchService> searchServices) {
+            ApiToServiceMap<SearchService> searchServices,
+            List<LogService> logServices) {
 
         // Setup Node
         Node node = INSTANCE;
@@ -72,6 +80,7 @@ public class Node {
         node.mPublishController = new PublishController(publishServices);
         node.mGetController = new GetController(getServices);
         node.mSearchController = new SearchController(searchServices);
+        node.mLogController = new LogController(logServices);
 
         // Start API(s)
         Set<Api> usedApis = new HashSet<Api>();
@@ -120,8 +129,12 @@ public class Node {
         ApiToServiceMap<SearchService> searchServices = new ApiToServiceMap<SearchService>();
         searchServices.addLocalService(Api.JAVA, db);
 
+        // LogService(s)
+        List<LogService> logServices = new LinkedList<LogService>();
+        logServices.add(new LogCatLogger());
+
         // Start Node
-        start(context, publishServices, getServices, searchServices);
+        start(context, publishServices, getServices, searchServices, logServices);
 
     }
 
@@ -194,6 +207,30 @@ public class Node {
 
         // Submit the Callable to the Node's ExecutorService
         return INSTANCE.mRequestExecutor.submit(task);
+    }
+
+    public static void log(LogEntry logEntry, Publish publish) {
+        INSTANCE.mLogController.log(logEntry, publish);
+    }
+
+    public static void log(LogEntry logEntry, PublishResponse publishResponse) {
+        INSTANCE.mLogController.log(logEntry, publishResponse);
+    }
+
+    public static void log(LogEntry logEntry, Get get) {
+        INSTANCE.mLogController.log(logEntry, get);
+    }
+
+    public static void log(LogEntry logEntry, GetResponse getResponse) {
+        INSTANCE.mLogController.log(logEntry, getResponse);
+    }
+
+    public static void log(LogEntry logEntry, Search search) {
+        INSTANCE.mLogController.log(logEntry, search);
+    }
+
+    public static void log(LogEntry logEntry, SearchResponse searchResponse) {
+        INSTANCE.mLogController.log(logEntry, searchResponse);
     }
 
 }

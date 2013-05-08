@@ -15,9 +15,9 @@ import android.netinf.common.Locator;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
 import android.netinf.node.Node;
-import android.netinf.node.publish.Publish;
-import android.netinf.node.publish.PublishResponse;
 import android.util.Log;
 
 public class RestPublishResource extends ServerResource {

@@ -1,4 +1,4 @@
-package android.netinf.node.search;
+package android.netinf.messages;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -6,7 +6,6 @@ import java.util.Set;
 
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
-import android.netinf.common.Response;
 
 public class SearchResponse extends Response {
 
@@ -32,8 +31,13 @@ public class SearchResponse extends Response {
     private final Set<Ndo> mResults;
 
     private SearchResponse(Builder builder) {
-        super(builder.mSearch.getId(), builder.mStatus);
+        super(builder.mSearch, builder.mStatus);
         mResults = Collections.unmodifiableSet(builder.mResults);
+    }
+
+    @Override
+    public Search getRequest() {
+        return (Search) super.getRequest();
     }
 
     public Set<Ndo> getResults() {

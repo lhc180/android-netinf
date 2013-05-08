@@ -12,9 +12,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.netinf.common.Ndo;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
 import android.netinf.node.Node;
-import android.netinf.node.get.Get;
-import android.netinf.node.get.GetResponse;
 import android.os.Environment;
 import android.util.Log;
 

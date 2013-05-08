@@ -1,4 +1,4 @@
-package android.netinf.node.search;
+package android.netinf.messages;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import android.netinf.common.NetInfUtils;
-import android.netinf.common.Request;
 import android.netinf.node.api.Api;
 
 

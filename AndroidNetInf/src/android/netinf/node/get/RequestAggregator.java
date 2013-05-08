@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 import android.netinf.common.Ndo;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
 
 public class RequestAggregator {
 
