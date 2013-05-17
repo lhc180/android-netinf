@@ -75,7 +75,11 @@ public class Get extends Request {
     }
 
     public void submitAggregatedResponse(GetResponse otherGetResponse) {
-        mAggregatedResponse = new GetResponse(this, otherGetResponse.getStatus(), otherGetResponse.getNdo());
+        if (otherGetResponse.getStatus().isSuccess()) {
+            mAggregatedResponse = new GetResponse(this, otherGetResponse.getStatus(), otherGetResponse.getNdo());
+        } else {
+            mAggregatedResponse = new GetResponse(this, otherGetResponse.getStatus());
+        }
         mDone.countDown();
     }
 

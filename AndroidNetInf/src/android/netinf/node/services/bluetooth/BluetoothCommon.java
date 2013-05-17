@@ -49,44 +49,46 @@ public class BluetoothCommon {
 
     public static BluetoothSocket connect(BluetoothDevice device) throws IOException {
 
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        String local = adapter.getName();
+        String remote = device.getName();
         BluetoothSocket socket = null;
         // Try one UUID at a time, a few times each until one connects
         for (UUID uuid : UUIDS) {
             for (int attempt = 1; attempt <= ATTEMPTS_PER_UUID; attempt++) {
                 try {
-                    Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " trying to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
-                    Log.d(TAG, "create");
+                    Log.i(TAG, local + " trying to connect to " + remote
+                            + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
                     socket = device.createRfcommSocketToServiceRecord(uuid);
                     // IOException "Service discovery failed"?
                     // Did all Api(s) get added to the ApiController and started?
-                    Log.d(TAG, "cancel");
-                    BluetoothAdapter.getDefaultAdapter().cancelDiscovery();
-                    Log.d(TAG, "connect");
+                    adapter.cancelDiscovery();
+                    Log.d(TAG, "I WILL SEE THIS");
+
                     socket.connect();
+                    Log.d(TAG, "I WANT TO SEE THIS");
                 } catch (IOException e) {
-                    if (e.getMessage() != null && e.getMessage().contains("-1")) {
+//                    if (e.getMessage() != null && e.getMessage().contains("read failed, socket might closed, read ret: -1")) {
                         // Workaround for Android 4.2.X Bluetooth Bug
-                        Log.e(TAG, "(Debug) " + BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " because of Android 4.2.X bug");
-                        BluetoothFix.needFix();
-                        continue;
-                    } else {
-                        Log.w(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " using UUID " + uuid + " (attempt " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
-                        Log.d(TAG, "It failed because:", e);
-                        continue;
-                    }
+//                        BluetoothFix.needFix(false);
+//                        throw new IOException(BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " because of Android 4.2.X bug", e);
+//                    } else {
+                        Log.w(TAG, local + " failed to connect to " + remote
+                                + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")"
+                                + ((e.getMessage() != null) ? ": " + e.getMessage() : ""));
+//                        continue;
+//                    }
                 }
-                break;
-            }
-            if (socket.isConnected()) {
-                break;
+                if (socket.isConnected()) {
+                    Log.i(TAG, local + " connected to " + remote);
+                    return socket;
+                }
             }
         }
-        if (!socket.isConnected()) {
-            throw new IOException(BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName());
-        }
-        Log.i(TAG, BluetoothAdapter.getDefaultAdapter().getName() + " connected to " + socket.getRemoteDevice().getName());
-        return socket;
+        throw new IOException(local + " failed to connect to " + remote);
     }
+
+//    private static
 
     public static String messageToString(Message message) {
 
@@ -164,6 +166,37 @@ public class BluetoothCommon {
     public static byte[] readFile(DataInputStream bluetoothIn) throws IOException {
         // TODO Don't read entire file into memory
         return read(bluetoothIn);
+    }
+
+    private static String bluetoothStateToString(int state) {
+        switch (state) {
+            case BluetoothAdapter.STATE_CONNECTED: return "STATE_CONNECTED";
+            case BluetoothAdapter.STATE_CONNECTING: return "STATE_CONNECTING";
+            case BluetoothAdapter.STATE_DISCONNECTED: return "STATE_DISCONNECTED";
+            case BluetoothAdapter.STATE_DISCONNECTING: return "STATE_DISCONNECTING";
+            case BluetoothAdapter.STATE_OFF: return "STATE_OFF";
+            case BluetoothAdapter.STATE_ON: return "STATE_ON";
+            case BluetoothAdapter.STATE_TURNING_OFF: return "STATE_TURNING_OFF";
+            case BluetoothAdapter.STATE_TURNING_ON: return "STATE_TURNING_ON";
+            default: return "UNKNOWN";
+        }
+    }
+
+    public static boolean isBluetoothAvailable() {
+
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null) {
+            Log.e(TAG, "Bluetooth NOT supported");
+            return false;
+        }
+
+        if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+            Log.e(TAG, "Bluetooth NOT enabled: " + bluetoothStateToString(BluetoothAdapter.getDefaultAdapter().getState()));
+            return false;
+        }
+
+        return true;
+
     }
 
 }

@@ -3,8 +3,10 @@ package android.netinf.streamer;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -12,6 +14,9 @@ import org.apache.commons.lang3.ArrayUtils;
 import android.app.Activity;
 import android.graphics.ImageFormat;
 import android.hardware.Camera;
+import android.netinf.common.Ndo;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
 import android.netinf.node.Node;
 import android.os.Bundle;
 import android.os.Environment;
@@ -56,6 +61,36 @@ public class StreamerActivity extends Activity {
         Node.start(getApplicationContext());
 
         setContentView(R.layout.activity_main);
+
+    }
+
+    public void debug() {
+        while (true) {
+
+            Ndo ndo = new Ndo.Builder("index", "stream_name").build();
+            Get get = new Get.Builder(ndo).build();
+            Future<GetResponse> f1 = Node.submit(get);
+            Future<GetResponse> f2 = Node.submit(get);
+            Future<GetResponse> f3 = Node.submit(get);
+            Future<GetResponse> f4 = Node.submit(get);
+            try {
+                Log.d(TAG, "---------" + System.currentTimeMillis());
+                GetResponse resp1 = f1.get();
+                GetResponse resp2 = f2.get();
+                GetResponse resp3 = f3.get();
+                GetResponse resp4 = f4.get();
+                Log.d(TAG, "---------" + System.currentTimeMillis());
+                Log.d(TAG, "------------" + resp1.getStatus() + " " + (resp1.getStatus().isSuccess() ? resp1.getNdo() : resp1.getRequest().getNdo()));
+                Log.d(TAG, "------------" + resp2.getStatus() + " " + (resp2.getStatus().isSuccess() ? resp2.getNdo() : resp2.getRequest().getNdo()));
+                Log.d(TAG, "------------" + resp3.getStatus() + " " + (resp3.getStatus().isSuccess() ? resp3.getNdo() : resp3.getRequest().getNdo()));
+                Log.d(TAG, "------------" + resp4.getStatus() + " " + (resp4.getStatus().isSuccess() ? resp4.getNdo() : resp4.getRequest().getNdo()));
+            } catch (ExecutionException e) {
+                Log.wtf(TAG, "--------get failed", e);
+            } catch (InterruptedException e) {
+                Log.wtf(TAG, "--------get failed", e);
+            }
+
+        }
     }
 
     @Override
@@ -82,6 +117,15 @@ public class StreamerActivity extends Activity {
                 return true;
             case R.id.menu_preference:
                 Node.showPreferences(this);
+                return true;
+            case R.id.menu_debug:
+                // TODO remove debug
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        debug();
+                    }
+                }).start();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -152,7 +196,7 @@ public class StreamerActivity extends Activity {
         mCamera.setDisplayOrientation(90);
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setPreviewFormat(ImageFormat.YV12);
-//        parameters.setPreviewFormat(ImageFormat.NV21);
+        //        parameters.setPreviewFormat(ImageFormat.NV21);
         parameters.setPreviewSize(320, 240);
         parameters.setPreviewFpsRange(15000, 15000);
         mCamera.setParameters(parameters);

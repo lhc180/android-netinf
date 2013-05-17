@@ -3,7 +3,6 @@ package android.netinf.streamer;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -93,7 +92,8 @@ public class Player implements Runnable {
     private GetResponse getUntilSuccess(Get get, int attempts) throws IOException {
         while (attempts > 0) {
             try {
-                GetResponse response = Node.submit(get).get(TIMEOUT, TimeUnit.MILLISECONDS);
+//                GetResponse response = Node.submit(get).get(TIMEOUT, TimeUnit.MILLISECONDS);
+                GetResponse response = Node.submit(get).get();
                 if (response.getStatus().isSuccess()) {
                     return response;
                 } else {
@@ -107,7 +107,7 @@ public class Player implements Runnable {
             } catch (InterruptedException e) {
                 Log.wtf(TAG, "Sleep interrupted", e);
             }
-            attempts--;
+//            attempts--;
         }
         throw new IOException("GET failed: " + get);
     }

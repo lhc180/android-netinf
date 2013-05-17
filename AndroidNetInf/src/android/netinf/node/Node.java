@@ -15,6 +15,7 @@ import org.apache.commons.io.FileUtils;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.netinf.R;
 import android.netinf.common.ApiToServiceMap;
 import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
@@ -42,7 +43,9 @@ import android.netinf.node.services.http.HttpGetService;
 import android.netinf.node.services.http.HttpPublishService;
 import android.netinf.node.services.http.HttpSearchService;
 import android.netinf.node.services.rest.RestApi;
+import android.netinf.node.services.visualization.VisualizationService;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 
@@ -82,6 +85,9 @@ public class Node {
         node.mSearchController = new SearchController(searchServices);
         node.mLogController = new LogController(logServices);
 
+        // Start Logging
+        node.mLogController.start();
+
         // Start API(s)
         Set<Api> usedApis = new HashSet<Api>();
         usedApis.addAll(publishServices.getApis());
@@ -95,6 +101,9 @@ public class Node {
 
 
     public static void start(Context context) {
+
+        // Load Settings
+        PreferenceManager.setDefaultValues(context, R.xml.preferences, false);
 
         // Create Api(s) and Service(s)
 
@@ -132,6 +141,7 @@ public class Node {
         // LogService(s)
         List<LogService> logServices = new LinkedList<LogService>();
         logServices.add(new LogCatLogger());
+        logServices.add(new VisualizationService());
 
         // Start Node
         start(context, publishServices, getServices, searchServices, logServices);

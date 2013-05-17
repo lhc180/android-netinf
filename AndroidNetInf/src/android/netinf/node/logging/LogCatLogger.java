@@ -12,41 +12,46 @@ public class LogCatLogger implements LogService {
 
     public static final String TAG = LogCatLogger.class.getSimpleName();
 
-    public void log(LogEntry logEntry, Object object) {
-        Log.d(TAG, getDirection(logEntry) + " " + logEntry.getService() + " " + object.toString());
+    @Override
+    public void start() {
+        // Do nothing
     }
 
     @Override
     public void log(LogEntry logEntry, Publish publish) {
-        log(logEntry, publish);
+        log(logEntry, (Object) publish);
     }
 
     @Override
     public void log(LogEntry logEntry, PublishResponse publishResponse) {
-        log(logEntry, publishResponse);
+        log(logEntry, (Object) publishResponse);
     }
 
     @Override
     public void log(LogEntry logEntry, Get get) {
-        log(logEntry, get);
+        log(logEntry, (Object) get);
     }
 
     @Override
     public void log(LogEntry logEntry, GetResponse getResponse) {
-        log(logEntry, getResponse);
+        log(logEntry, (Object) getResponse);
     }
 
     @Override
     public void log(LogEntry logEntry, Search search) {
-        log(logEntry, search);
+        log(logEntry, (Object) search);
     }
 
     @Override
     public void log(LogEntry logEntry, SearchResponse searchResponse) {
-        log(logEntry, searchResponse);
+        log(logEntry, (Object) searchResponse);
     }
 
-    public String getDirection(LogEntry logEntry) {
+    private void log(LogEntry logEntry, Object object) {
+        Log.d(TAG, getDirection(logEntry) + " " + logEntry.getService() + " " + object.toString());
+    }
+
+    private String getDirection(LogEntry logEntry) {
         if (logEntry.isIncoming()) {
             return "INCOMING";
         } else {

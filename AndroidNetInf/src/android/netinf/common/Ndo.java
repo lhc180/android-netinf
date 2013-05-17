@@ -35,6 +35,8 @@ public class Ndo implements Serializable {
         }
 
         public Builder(String algorithm, String hash) {
+            if (algorithm == null) throw new NullPointerException("algorithm must not be null");
+            if (hash == null) throw new NullPointerException("hash must not be null");
             mAlgorithm = algorithm;
             mHash = hash;
         }
@@ -228,8 +230,26 @@ public class Ndo implements Serializable {
         return builder.toString();
     }
 
-    public boolean equals(Ndo ndo) {
-        return (mAlgorithm == ndo.mAlgorithm) && (mHash == ndo.mHash);
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int hash = 1;
+        hash = prime * hash + mAlgorithm.hashCode();
+        hash = prime * hash + mHash.hashCode();
+        return hash;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        Ndo other = (Ndo) obj;
+        return mAlgorithm.equals(other.mAlgorithm) && mHash.equals(other.mHash);
+    }
+
+//    public boolean equals(Ndo ndo) {
+//        return (mAlgorithm == ndo.mAlgorithm) && (mHash == ndo.mHash);
+//    }
 
 }

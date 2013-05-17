@@ -31,7 +31,8 @@ public class VisualizationService implements LogService {
     private BufferedReader mIn;
     private Timer mPingPongTimer;
 
-    public VisualizationService() {
+    @Override
+    public void start() {
         mPingPongTimer = new Timer();
         mPingPongTimer.schedule(new PingPong(), 0, 2000);
     }
@@ -102,15 +103,15 @@ public class VisualizationService implements LogService {
 
     private class PingPong extends TimerTask {
 
-        private String mMessage = "Notification Service initialization for " + getId();
+        private String mMessage = "Notification Service initialization for ";
 
         @Override
         public void run() {
             try {
                 ping();
-                Log.i(TAG, "Visualization (Ping)");
+                // Log.i(TAG, "Visualization (Ping)");
                 pong();
-                Log.i(TAG, "Visualization (Pong)");
+                // Log.i(TAG, "Visualization (Pong)");
             } catch (IOException e) {
                 Log.e(TAG, "Communication with Visualization Server failed", e);
                 restartSocket();
@@ -118,20 +119,23 @@ public class VisualizationService implements LogService {
         }
 
         private void ping() throws IOException {
-            send(mMessage);
+            if (mSocket == null) {
+                restartSocket();
+            }
+            send(mMessage + getId());
         }
 
         private void pong() throws IOException {
             String inLine = null;
             while ((inLine = mIn.readLine()) != null) {
                 if (inLine.startsWith("Notification")) {
-                    if (!inLine.equals(mMessage)) {
+                    if (!inLine.equals(mMessage + getId())) {
                         throw new IOException("Read '" + inLine + "', expected '" + mMessage + "'");
                     } else {
                         break;
                     }
                 }
-                Log.d(TAG, "pong() read: " + inLine);
+                // Log.d(TAG, "pong() read: " + inLine);
             }
         }
     }
@@ -185,7 +189,7 @@ public class VisualizationService implements LogService {
                 getResponse.getRequest().getId(),
                 getStatus(getResponse),
                 getDirection(logEntry),
-                getResponse.getNdo().getUri());
+                getResponse.getRequest().getNdo().getUri());
     }
 
     @Override

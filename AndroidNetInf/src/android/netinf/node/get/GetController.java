@@ -8,6 +8,7 @@ import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
 import android.netinf.messages.Publish;
 import android.netinf.node.Node;
+import android.netinf.node.logging.LogEntry;
 import android.util.Log;
 
 public class GetController implements GetService {
@@ -17,28 +18,38 @@ public class GetController implements GetService {
     public static final String TAG = GetController.class.getSimpleName();
 
     private ApiToServiceMap<GetService> mServices;
-    private RequestAggregator mRequestAggregator;
+    private InprogressTracker mInProgressTracker = new InprogressTracker();
+    private RequestAggregator mRequestAggregator = new RequestAggregator();
 
     public GetController(ApiToServiceMap<GetService> services) {
         mServices = services;
-        mRequestAggregator = new RequestAggregator();
     }
 
     @Override
     public GetResponse perform(Get get) {
 
+        // Log
+        Node.log(LogEntry.newIncoming("UNKNOWN"), get);
+
         // Reduce hop limit
         get = new Get.Builder(get).consumeHop().build();
 
-        // Try to aggregate the Get
-        boolean aggregated = mRequestAggregator.aggregate(get);
+        // Check if the Get is already in progress to avoid network loops
+        boolean started = mInProgressTracker.tryToStart(get);
+        if (!started) {
+            return new GetResponse(get, NetInfStatus.FAILED);
+        }
 
+        // Try to aggregate the Get
+        boolean aggregated = mRequestAggregator.tryToAggregate(get);
         if (aggregated) {
 
             Log.i(TAG, "Aggregated GET of " + get);
             GetResponse response = get.aggregate(TIMEOUT, TimeUnit.MILLISECONDS);
-            mRequestAggregator.done(get);
+            mInProgressTracker.stop(get);
+            mRequestAggregator.notWaitingAnymore(get);
             Log.i(TAG, "Aggregated GET of " + get + " done. STATUS " + response.getStatus());
+            Node.log(LogEntry.newOutgoing("UNKNOWN"), response);
             return response;
 
         } else {
@@ -66,9 +77,12 @@ public class GetController implements GetService {
                 }
             }
 
+            // The Get is no longer in progress
+            mInProgressTracker.stop(get);
+
             // Notify all waiting aggregated requests
             // synchronized so no new aggregated requests are added while responding
-            mRequestAggregator.notify(get, response);
+            mRequestAggregator.notifyAggregated(get, response);
 
             // Publish the received data locally
             if (response.getStatus().isSuccess()) {
@@ -77,6 +91,7 @@ public class GetController implements GetService {
             }
 
             Log.i(TAG, "GET of " + get + " done. STATUS " + response.getStatus());
+            Node.log(LogEntry.newOutgoing("UNKNOWN"), response);
             return response;
 
         }

@@ -5,9 +5,17 @@ public class LogEntry {
     private String mService;
     private boolean mIncoming;
 
-    public LogEntry(String service, boolean incoming) {
+    private LogEntry(String service, boolean incoming) {
         mService = service;
         mIncoming = incoming;
+    }
+
+    public static LogEntry newIncoming(String service) {
+        return new LogEntry(service, true);
+    }
+
+    public static LogEntry newOutgoing(String service) {
+        return new LogEntry(service, false);
     }
 
     public String getService() {

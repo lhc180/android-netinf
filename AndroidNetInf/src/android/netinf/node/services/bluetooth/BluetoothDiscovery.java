@@ -134,10 +134,20 @@ public class BluetoothDiscovery implements Runnable {
 
     public Set<BluetoothDevice> getBluetoothDevices() {
         // TODO DEBUG, return bonded devices
-        for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
+//        for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
+//            Log.d(TAG, "(Debug) Ignoring Bluetooth discovery, returning bonded device(s) instead: " + device.getName());
+//        }
+//        return BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        Log.d(TAG, "adapter" + adapter);
+        Set<BluetoothDevice> devices = adapter.getBondedDevices();
+        Log.d(TAG, "devices " + devices);
+        for (BluetoothDevice device : devices) {
             Log.d(TAG, "(Debug) Ignoring Bluetooth discovery, returning bonded device(s) instead: " + device.getName());
         }
-        return BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+        return devices;
+
 
 //        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>();
 //        for (SeenDevice seenDevice : mSeenDevices.values()) {

@@ -18,13 +18,13 @@ public class RequestAggregator {
     }
 
     /**
-     * Aggregate a requests if possible.
+     * Try to aggregate a request.
      * @param get
-     *     The Get request to check if it can be aggregated
+     *     The Get request to aggregate
      * @return
      *     true if the request was aggregated, otherwise false
      */
-    public synchronized boolean aggregate(Get get) {
+    public synchronized boolean tryToAggregate(Get get) {
         boolean aggregated = mPendingGets.containsKey(get.getNdo());
         if (aggregated) {
             // We should aggregate, add to set of aggregated requests
@@ -37,11 +37,12 @@ public class RequestAggregator {
     }
 
     /**
-     * Signal that a Get is no longer waiting for response.
+     * Signal that a Get is no longer waiting for a response.
      * @param get
-     *     The Get no longer waiting for response
+     *     The Get that is no longer waiting for a response
      */
-    public synchronized void done(Get get) {
+    public synchronized void notWaitingAnymore(Get get) {
+        // This Get is for some reason (got its result, timed out, ...) not waiting for a response anymore
         // This could happen after the "leader" called notify on an aggregation
         // If so the Ndo key has been removed, i.e. do safety check
         if (mPendingGets.containsKey(get.getNdo())) {
@@ -50,15 +51,15 @@ public class RequestAggregator {
     }
 
     /**
-     * Notify all Gets for the same Ndo of the response.
+     * Notify all aggregated Gets of the result.
      * @param get
      *     The completed Get
      * @param response
-     *     The response to the completed Get
+     *     The response to the completed Get to be used as result for the aggregated Gets
      */
-    public synchronized void notify(Get get, GetResponse response) {
+    public synchronized void notifyAggregated(Get get, GetResponse response) {
         // The "leader" of the aggregation got his result
-        // Notify others an remove the aggregation
+        // Notify others and remove the aggregation
         for (Get aggregatedGet : mPendingGets.get(get.getNdo())) {
             aggregatedGet.submitAggregatedResponse(response);
         }

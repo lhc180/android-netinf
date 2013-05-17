@@ -35,7 +35,9 @@ import android.netinf.common.NetInfException;
 import android.netinf.common.NetInfStatus;
 import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
+import android.netinf.node.Node;
 import android.netinf.node.get.GetService;
+import android.netinf.node.logging.LogEntry;
 import android.util.Log;
 
 public class HttpGetService implements GetService {
@@ -58,7 +60,9 @@ public class HttpGetService implements GetService {
         for (String peer : HttpCommon.PEERS) {
             try {
                 HttpResponse response = client.execute(createGet(peer, get));
+                Node.log(LogEntry.newOutgoing("HTTP"), get);
                 GetResponse getResponse = parse(get, response);
+                Node.log(LogEntry.newIncoming("HTTP"), getResponse);
                 if (getResponse.getStatus().isSuccess()) {
                     return getResponse;
                 }

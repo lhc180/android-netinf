@@ -20,6 +20,13 @@ public class LogController implements LogService {
     }
 
     @Override
+    public void start() {
+        for (LogService logService : mLogServices) {
+            logService.start();
+        }
+    }
+
+    @Override
     public void log(LogEntry logEntry, Publish publish) {
         for (LogService logService : mLogServices) {
             logService.log(logEntry, publish);

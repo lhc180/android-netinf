@@ -10,6 +10,7 @@ import android.netinf.messages.SearchResponse;
 public interface LogService {
 
     // TODO this is not good design, refactor
+    public void start();
     public void log(LogEntry logEntry, Publish publish);
     public void log(LogEntry logEntry, PublishResponse publishResponse);
     public void log(LogEntry logEntry, Get get);

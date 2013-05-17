@@ -19,7 +19,11 @@ public class SettingsActivity extends Activity {
     }
 
     public static String getPreference(String key) {
-        return PreferenceManager.getDefaultSharedPreferences(Node.getContext()).getString(key, null);
+        String value = PreferenceManager.getDefaultSharedPreferences(Node.getContext()).getString(key, null);
+        if (value == null) {
+            throw new IllegalArgumentException("Preferences does not contain the key '" + key + "'");
+        }
+        return value;
     }
 
     @Override

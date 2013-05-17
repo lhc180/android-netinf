@@ -14,6 +14,7 @@ public class BluetoothFix {
         FIX_IN_PROGRESS
     }
 
+    private static Object mLock = new Object();
     private static State mState = State.OK;
     private static CountDownLatch mSignal;
 
@@ -24,11 +25,11 @@ public class BluetoothFix {
      * Restarting Bluetooth seems to be the only current work around.
      * http://code.google.com/p/android/issues/detail?id=41110
      */
-    public static void needFix() {
+    public static void needFix(boolean waitUntilFixed) {
 
         CountDownLatch signal;
 
-        synchronized (mState) {
+        synchronized (mLock) {
             if (mState == State.OK) {
                 mState = State.FIX_IN_PROGRESS;
                 mSignal = new CountDownLatch(1);
@@ -40,7 +41,9 @@ public class BluetoothFix {
         }
 
         try {
-            signal.await();
+            if (waitUntilFixed) {
+                signal.await();
+            }
         } catch (InterruptedException e) {
             Log.wtf(TAG, "Bluetooth fix interrupted", e);
         }
@@ -78,7 +81,7 @@ public class BluetoothFix {
                     }
                 }
 
-                synchronized (mState) {
+                synchronized (mLock) {
                     mState = State.OK;
                     mSignal.countDown();
                 }
