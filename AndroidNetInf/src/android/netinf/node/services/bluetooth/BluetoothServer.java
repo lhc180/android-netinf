@@ -73,7 +73,7 @@ public class BluetoothServer implements Runnable {
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().contains("-1")) {
                     // Workaround for Android 4.2.X Bluetooth Bug
-                    Log.e(TAG, "(Debug) Failed to restart server because of Android 4.2.X bug");
+                    Log.e(TAG, "(Debug) Failed to restart server because of Android 4.2.X bug" + ": " + e.getMessage());
                     BluetoothFix.needFix(true);
                 } else {
                     Log.e(TAG, "Failed to handle request", e);

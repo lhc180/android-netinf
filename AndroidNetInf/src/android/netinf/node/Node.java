@@ -43,7 +43,6 @@ import android.netinf.node.services.http.HttpGetService;
 import android.netinf.node.services.http.HttpPublishService;
 import android.netinf.node.services.http.HttpSearchService;
 import android.netinf.node.services.rest.RestApi;
-import android.netinf.node.services.visualization.VisualizationService;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -133,6 +132,7 @@ public class Node {
         getServices.addLocalService(Api.JAVA, db);
         getServices.addLocalService(bluetoothApi, db);
         getServices.addRemoteService(Api.JAVA, bluetoothGet);
+        getServices.addRemoteService(bluetoothApi, bluetoothGet);
 
         // Link Api(s) to SearchService(s)
         ApiToServiceMap<SearchService> searchServices = new ApiToServiceMap<SearchService>();
@@ -141,7 +141,7 @@ public class Node {
         // LogService(s)
         List<LogService> logServices = new LinkedList<LogService>();
         logServices.add(new LogCatLogger());
-        logServices.add(new VisualizationService());
+//        logServices.add(new VisualizationService());
 
         // Start Node
         start(context, publishServices, getServices, searchServices, logServices);

@@ -8,6 +8,7 @@ import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
 import android.netinf.messages.Publish;
 import android.netinf.node.Node;
+import android.netinf.node.api.Api;
 import android.netinf.node.logging.LogEntry;
 import android.util.Log;
 
@@ -31,8 +32,10 @@ public class GetController implements GetService {
         // Log
         Node.log(LogEntry.newIncoming("UNKNOWN"), get);
 
-        // Reduce hop limit
-        get = new Get.Builder(get).consumeHop().build();
+        // Reduce hop limit (unless this was a local request)
+        if (get.getSource() != Api.JAVA) {
+            get = new Get.Builder(get).consumeHop().build();
+        }
 
         // Check if the Get is already in progress to avoid network loops
         boolean started = mInProgressTracker.tryToStart(get);
