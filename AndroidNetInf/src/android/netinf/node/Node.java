@@ -141,7 +141,7 @@ public class Node {
         // LogService(s)
         List<LogService> logServices = new LinkedList<LogService>();
         logServices.add(new LogCatLogger());
-//        logServices.add(new VisualizationService());
+        // logServices.add(new VisualizationService());
 
         // Start Node
         start(context, publishServices, getServices, searchServices, logServices);

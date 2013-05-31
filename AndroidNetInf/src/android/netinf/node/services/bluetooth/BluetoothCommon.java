@@ -4,30 +4,16 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.lang.reflect.Method;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.james.mime4j.dom.Message;
-import org.apache.james.mime4j.dom.MessageWriter;
-import org.apache.james.mime4j.message.DefaultMessageWriter;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.os.Environment;
 import android.util.Log;
 
 // In case you don't want to send length prefixes
@@ -42,158 +28,290 @@ public class BluetoothCommon {
 
     public static final String TAG = BluetoothCommon.class.getSimpleName();
 
-    public static final int ATTEMPTS_PER_UUID = 2;
+//    private static ExecutorService mConnectExecutor = Executors.newCachedThreadPool();
 
-    public static final Set<UUID> UUIDS = Collections.unmodifiableSet(new HashSet<UUID>(Arrays.asList(
-            new UUID[] {UUID.fromString("111a8500-6ae2-11e2-bcfd-0800200c9a66"),
-                    UUID.fromString("111a8501-6ae2-11e2-bcfd-0800200c9a66"),
-                    UUID.fromString("111a8502-6ae2-11e2-bcfd-0800200c9a66"),
-                    UUID.fromString("111a8503-6ae2-11e2-bcfd-0800200c9a66"),
-                    UUID.fromString("111a8504-6ae2-11e2-bcfd-0800200c9a66")})));
+    // Ugly hack to restart Bluetooth
+    private static Boolean mRestartingBluetooth = false;
+    public static void restartBluetooth(boolean wait) {
 
-    private static ExecutorService mConnectExecutor = Executors.newFixedThreadPool(UUIDS.size());
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
 
-    // TODO figure out why this DOES recover after Bluetooth failure due to Android bug
+        // If status is not currently "restarting"
+        // Set status "restarting" and toggle Bluetooth off/on
+        synchronized (mRestartingBluetooth) {
+            if (!mRestartingBluetooth) {
+                Log.i(TAG, "Restarting Bluetooth...");
+                mRestartingBluetooth = true;
+                adapter.cancelDiscovery();
+                adapter.disable();
+                while (adapter.isEnabled()) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        Log.wtf(TAG, "Sleep interrupted", e);
+                    }
+                }
+                adapter.enable();
+            }
+        }
+
+        // If we don't want to wait until it is restarted, return
+        if (!wait) {
+            return;
+        }
+
+        // Wait until Bluetooth has finished restarting
+        while (!adapter.isEnabled()) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Log.wtf(TAG, "Sleep interrupted", e);
+            }
+        }
+
+        // Set status to "not restarting"
+        synchronized (mRestartingBluetooth) {
+            if (mRestartingBluetooth) {
+                mRestartingBluetooth = false;
+                Log.i(TAG, "Bluetooth restarted");
+            }
+        }
+
+        // Wait a little bit extra
+        // Should not be necessary but unless you wait the errors are not always resolved
+        // Could be that behind the scenes things take a bit longer
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Log.wtf(TAG, "Sleep interrupted", e);
+        }
+
+    }
+
+    // http://stackoverflow.com/questions/14834318/android-how-to-pair-bluetooth-devices-programmatically
+    private static void removeBond(BluetoothDevice device) {
+        try {
+            Log.d(TAG, "Start Un-Pairing...");
+//            Method m = device.getClass().getMethod("removeBond", (Class[]) null);
+//            m.invoke(device, (Object[]) null);
+            Method m = device.getClass().getMethod("removeBond", new Class[] {});
+            m.invoke(device, new Object[] {});
+            Log.d(TAG, "Un-Pairing finished.");
+        } catch (Exception e) {
+            Log.wtf(TAG, e.getMessage());
+        }
+    }
+
+    //http://stackoverflow.com/questions/13767972/android-bluetooth-ibluetooth-createbond-not-found-in-4-2-1-but-works-in-earlie
+    public static boolean createBond(BluetoothDevice btDevice) {
+        try {
+            Class class1 = Class.forName("android.bluetooth.BluetoothDevice");
+            Method createBondMethod = class1.getMethod("createBond");
+            Boolean returnValue = (Boolean) createBondMethod.invoke(btDevice);
+            return returnValue.booleanValue();
+        } catch (Exception e) {
+            Log.wtf(TAG, e.getMessage());
+            return false;
+        }
+    }
+
     public static BluetoothSocket connect(BluetoothDevice device) throws IOException {
 
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        String local = adapter.getName();
-        String remote = device.getName();
+
+//        Timer failedTimer = new Timer();
         BluetoothSocket socket = null;
-        // Try one UUID at a time, a few times each until one connects
-        for (UUID uuid : UUIDS) {
-            for (int attempt = 1; attempt <= ATTEMPTS_PER_UUID; attempt++) {
-                try {
-                    Log.i(TAG, local + " trying to connect to " + remote
-                            + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
-                    socket = device.createRfcommSocketToServiceRecord(uuid);
-                    // IOException "Service discovery failed"?
-                    // Did all Api(s) get added to the ApiController and started?
-                    adapter.cancelDiscovery();
-                    Log.d(TAG, "I WILL SEE THIS");
-
-                    socket.connect();
-                    Log.d(TAG, "I WANT TO SEE THIS");
-                } catch (IOException e) {
-                    // if (e.getMessage() != null && e.getMessage().contains("read failed, socket might closed, read ret: -1")) {
-                    // Workaround for Android 4.2.X Bluetooth Bug
-                    // BluetoothFix.needFix(false);
-                    // throw new IOException(BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " because of Android 4.2.X bug", e);
-                    // } else {
-                    Log.w(TAG, local + " failed to connect to " + remote
-                            + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")"
-                            + ((e.getMessage() != null) ? ": " + e.getMessage() : ""));
-                    // continue;
-                    // }
-                }
-                if (socket.isConnected()) {
-                    Log.i(TAG, local + " connected to " + remote);
-                    return socket;
-                }
-            }
-        }
-        throw new IOException(local + " failed to connect to " + remote);
-    }
-
-    // TODO figure out why connect2 does not recover after Bluetooth failure due to Android bug
-    public static BluetoothSocket connect2(BluetoothDevice device) throws IOException {
-
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        String local = adapter.getName();
-        String remote = device.getName();
-        BluetoothSocket socket = null;
-        // Try one UUID at a time, a few times each until one connects
-        for (UUID uuid : UUIDS) {
-            for (int attempt = 1; attempt <= ATTEMPTS_PER_UUID; attempt++) {
-                try {
-                    Log.i(TAG, local + " trying to connect to " + remote
-                            + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
-                    socket = device.createRfcommSocketToServiceRecord(uuid);
-                    adapter.cancelDiscovery();
-                    connect(socket);
-                    Log.i(TAG, local + " connected to " + remote);
-                    return socket;
-                } catch (IOException e) {
-                        Log.w(TAG, local + " failed to connect to " + remote
-                                + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")"
-                                + ((e.getMessage() != null) ? ": " + e.getMessage() : ""));
-                }
-            }
-        }
-        throw new IOException(local + " failed to connect to " + remote);
-    }
-
-    private static void connect(final BluetoothSocket socket) throws IOException {
-
-        final CountDownLatch done = new CountDownLatch(1);
-
-        mConnectExecutor.submit(new Runnable() {
-
-            @Override
-            public void run() {
-                try {
-                    socket.connect();
-                } catch (IOException e) {
-                    Log.w(TAG, "BluetoothSocket.connect() failed" + (e.getMessage() != null ? ": " + e.getMessage() : ""));
-                }
-                done.countDown();
-            };
-
-        });
-
         try {
-            if (!done.await(1000, TimeUnit.MILLISECONDS)) {
-                IOUtils.closeQuietly(socket);
-                throw new IOException("Connection attempt timed out");
-            }
-        } catch (InterruptedException e) {
-            IOUtils.closeQuietly(socket);
-            throw new IOException("Connection attempt interrupted", e);
+            // Connect to remote device
+            Log.d(TAG, "createRfcommSocketToServiceRecord");
+            socket = device.createRfcommSocketToServiceRecord(BluetoothApi.NETINF_UUID);
+            Log.d(TAG, "after createRfcommSocketToServiceRecord");
+//            final BluetoothSocket finalSocket = socket; // Inner class requires a final variable
+            adapter.cancelDiscovery();
+//            failedTimer.schedule(new TimerTask() {
+//                @Override
+//                public void run() {
+//                    Log.e(TAG, "Bluetooth connection timed out");
+//                    IOUtils.closeQuietly(finalSocket);
+////                    BluetoothUtils.restartBluetooth(false);
+//                }
+//            }, 5000);
+            Log.d(TAG, "connect");
+            socket.connect();
+            Log.d(TAG, "after connect");
+//            failedTimer.cancel();
+        } catch (IOException e) {
+//            failedTimer.cancel();
+            IOUtils.closeQuietly(socket); // Shouldn't be necessary, but who knows?
+            // Sometimes Android 4.2.X fails and BluetoothSocket.connect() start to always throw
+            // java.io.IOException: read failed, socket might closed, read ret: -1
+            // Workaround is to unpair/pair, ugly hack does it without consent
+//            if (e.getMessage() != null && e.getMessage().equals("read failed, socket might closed, read ret: -1")) {
+//                restartBluetooth(false);
+//            }
+            throw new IOException(adapter.getName() + " failed to connect to " + device.getName(), e);
         }
 
+        // According to the documentation of BluetoothSocket.connect()
+        // "If this method returns without an exception then this socket is now connected."
+        // Ended up here with unconnected sockets a bit to often
+        // Of course the socket could have died unexpectedly
         if (!socket.isConnected()) {
             IOUtils.closeQuietly(socket);
-            throw new IOException("Socket not connected");
+            throw new IOException(adapter.getName() + " failed to connect to " + device.getName() + ": socket is not connected");
+        } else {
+            return socket;
         }
 
     }
 
-    public static String messageToString(Message message) {
 
-        String result = "<Failed to convert message to string>";
-        try {
-            File file = new File(Environment.getExternalStorageDirectory() + "/message.txt");
-            FileOutputStream fis = new FileOutputStream(file);
-            MessageWriter writer = new DefaultMessageWriter();
-            writer.writeMessage(message, fis);
-            return FileUtils.readFileToString(file);
-        } catch (IOException e) {
-            Log.wtf(TAG, "Failed to convert message to string", e);
-        }
-        return result;
+//    // TODO figure out why this DOES recover after Bluetooth failure due to Android bug
+//    public static BluetoothSocket connect(BluetoothDevice device) throws IOException {
+//
+//        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+//        String local = adapter.getName();
+//        String remote = device.getName();
+//        BluetoothSocket socket = null;
+//        // Try one UUID at a time, a few times each until one connects
+//        for (UUID uuid : UUIDS) {
+//            for (int attempt = 1; attempt <= ATTEMPTS_PER_UUID; attempt++) {
+//                try {
+//                    Log.i(TAG, local + " trying to connect to " + remote
+//                            + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
+//                    socket = device.createRfcommSocketToServiceRecord(uuid);
+//                    // IOException "Service discovery failed"?
+//                    // Did all Api(s) get added to the ApiController and started?
+//                    adapter.cancelDiscovery();
+//                    Log.d(TAG, "I WILL SEE THIS");
+//
+//                    socket.connect();
+//                    Log.d(TAG, "I WANT TO SEE THIS");
+//                } catch (IOException e) {
+//                    // if (e.getMessage() != null && e.getMessage().contains("read failed, socket might closed, read ret: -1")) {
+//                    // Workaround for Android 4.2.X Bluetooth Bug
+//                    // BluetoothFix.needFix(false);
+//                    // throw new IOException(BluetoothAdapter.getDefaultAdapter().getName() + " failed to connect to " + device.getName() + " because of Android 4.2.X bug", e);
+//                    // } else {
+//                    Log.w(TAG, local + " failed to connect to " + remote
+//                            + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")"
+//                            + ((e.getMessage() != null) ? ": " + e.getMessage() : ""));
+//                    // continue;
+//                    // }
+//                }
+//                if (socket.isConnected()) {
+//                    Log.i(TAG, local + " connected to " + remote);
+//                    return socket;
+//                }
+//            }
+//        }
+//        throw new IOException(local + " failed to connect to " + remote);
+//    }
+//
+//    // TODO figure out why connect2 does not recover after Bluetooth failure due to Android bug
+//    public static BluetoothSocket connect2(BluetoothDevice device) throws IOException {
+//
+//        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+//        String local = adapter.getName();
+//        String remote = device.getName();
+//        BluetoothSocket socket = null;
+//        // Try one UUID at a time, a few times each until one connects
+//        for (UUID uuid : UUIDS) {
+//            for (int attempt = 1; attempt <= ATTEMPTS_PER_UUID; attempt++) {
+//                try {
+//                    Log.i(TAG, local + " trying to connect to " + remote
+//                            + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")");
+//                    socket = device.createRfcommSocketToServiceRecord(uuid);
+//                    adapter.cancelDiscovery();
+//                    connect(socket);
+//                    Log.i(TAG, local + " connected to " + remote);
+//                    return socket;
+//                } catch (IOException e) {
+//                        Log.w(TAG, local + " failed to connect to " + remote
+//                                + " (UUID " + uuid + ", try " + attempt + "/" + ATTEMPTS_PER_UUID + ")"
+//                                + ((e.getMessage() != null) ? ": " + e.getMessage() : ""));
+//                }
+//            }
+//        }
+//        throw new IOException(local + " failed to connect to " + remote);
+//    }
+//
+//    private static void connect(final BluetoothSocket socket) throws IOException {
+//
+//        final CountDownLatch done = new CountDownLatch(1);
+//
+//        mConnectExecutor.submit(new Runnable() {
+//
+//            @Override
+//            public void run() {
+//                try {
+//                    socket.connect();
+//                } catch (IOException e) {
+//                    Log.w(TAG, "BluetoothSocket.connect() failed" + (e.getMessage() != null ? ": " + e.getMessage() : ""));
+//                }
+//                done.countDown();
+//            };
+//
+//        });
+//
+//        try {
+//            if (!done.await(1000, TimeUnit.MILLISECONDS)) {
+//                IOUtils.closeQuietly(socket);
+//                throw new IOException("Connection attempt timed out");
+//            }
+//        } catch (InterruptedException e) {
+//            IOUtils.closeQuietly(socket);
+//            throw new IOException("Connection attempt interrupted", e);
+//        }
+//
+//        if (!socket.isConnected()) {
+//            IOUtils.closeQuietly(socket);
+//            throw new IOException("Socket not connected");
+//        }
+//
+//    }
 
+//    public static String messageToString(Message message) {
+//
+//        String result = "<Failed to convert message to string>";
+//        try {
+//            File file = new File(Environment.getExternalStorageDirectory() + "/message.txt");
+//            FileOutputStream fis = new FileOutputStream(file);
+//            MessageWriter writer = new DefaultMessageWriter();
+//            writer.writeMessage(message, fis);
+//            return FileUtils.readFileToString(file);
+//        } catch (IOException e) {
+//            Log.wtf(TAG, "Failed to convert message to string", e);
+//        }
+//        return result;
+//
+//    }
+
+    public static void readConfirmation(DataInputStream bluetoothIn) throws IOException {
+        Log.v(TAG, "readEos()");
+//        try {
+//            Log.d(TAG, "Reading until 'EOS'...");
+//            int b = 0;
+//            do {
+//                b = bluetoothIn.readInt();
+//                // Log.d(TAG, "(Debug) b = " + b);
+//            } while (b != -1);
+//            Log.d(TAG, "Read 'EOS'!");
+//        } catch (Throwable e) {
+//            Log.e(TAG, "Failed to read 'EOS'", e);
+//        }
+        bluetoothIn.readInt();
     }
 
-    public static void readEos(DataInputStream bluetoothIn) {
-        try {
-            Log.d(TAG, "Reading until 'EOS'...");
-            int b = 0;
-            do {
-                b = bluetoothIn.readInt();
-                // Log.d(TAG, "(Debug) b = " + b);
-            } while (b != -1);
-            Log.d(TAG, "Read 'EOS'!");
-        } catch (Throwable e) {
-            Log.e(TAG, "Failed to read 'EOS'", e);
-        }
-    }
-
-    public static void writeEos(DataOutputStream bluetoothOut) throws IOException {
-        Log.d(TAG, "Wrote 'EOS'");
-        bluetoothOut.writeInt(-1);
+    public static void writeConfirmation(DataOutputStream bluetoothOut) throws IOException {
+        Log.v(TAG, "writeEos()");
+//        Log.d(TAG, "Wrote 'EOS'");
+//        bluetoothOut.writeInt(-1);
+        bluetoothOut.writeInt(0);
     }
 
     public static void write(JSONObject jo, DataOutputStream bluetoothOut) throws IOException {
+        Log.v(TAG, "write(JSONObject)");
         Log.d(TAG, "Wrote: " + jo.toString());
         byte[] buffer = jo.toString().getBytes("UTF-8");
         bluetoothOut.writeInt(buffer.length);
@@ -201,6 +319,7 @@ public class BluetoothCommon {
     }
 
     public static void write(File file, DataOutputStream bluetoothOut) throws IOException {
+        Log.v(TAG, "write(File)");
         long length = file.length();
         if (length > Integer.MAX_VALUE) {
             throw new IOException("Failed to write file. File too long.");
@@ -209,29 +328,35 @@ public class BluetoothCommon {
         IOUtils.copy(new FileInputStream(file), bluetoothOut);
     }
 
-    private static byte[] read(DataInputStream bluetoothIn) throws IOException {
+    private static byte[] read(DataInputStream in) throws IOException {
+        Log.v(TAG, "read()");
         // Read appropriate part from the Bluetooth stream
-        int length = bluetoothIn.readInt();
+        int length = in.readInt();
         byte[] buffer = new byte[length];
 
         int offset = 0;
         while (offset < length) {
-            offset += bluetoothIn.read(buffer, offset, length - offset);
+            offset += in.read(buffer, offset, length - offset);
             Log.d(TAG, "(Debug) Transfered " + offset + "/" + length + " bytes");
         }
-        //        bluetoothIn.read(buffer);
 
         return buffer;
     }
 
-    public static JSONObject readJson(DataInputStream bluetoothIn) throws IOException, JSONException {
-        byte[] buffer = read(bluetoothIn);
-        String json = new String(buffer, "UTF-8");
-        Log.d(TAG, "Read: " + new JSONObject(json).toString());
-        return new JSONObject(json);
+    public static JSONObject readJson(DataInputStream in) throws IOException {
+        Log.v(TAG, "readJson()");
+        try {
+            byte[] buffer = read(in);
+            String json = new String(buffer, "UTF-8");
+            Log.d(TAG, "Read: " + new JSONObject(json).toString());
+            return new JSONObject(json);
+        } catch (JSONException e) {
+            throw new IOException("InputStream did not contain valid JSON", e);
+        }
     }
 
     public static byte[] readFile(DataInputStream bluetoothIn) throws IOException {
+        Log.v(TAG, "readFile()");
         // TODO Don't read entire file into memory
         return read(bluetoothIn);
     }

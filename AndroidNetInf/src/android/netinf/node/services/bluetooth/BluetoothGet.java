@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.netinf.common.Locator;
@@ -37,6 +38,7 @@ public class BluetoothGet implements GetService {
     public GetResponse perform(Get get) {
         Log.i(TAG, "Bluetooth CL received GET: " + get);
 
+        // Check if Bluetooth is available, could be restarting
         if (!BluetoothCommon.isBluetoothAvailable()) {
             return new GetResponse(get, NetInfStatus.FAILED);
         }
@@ -50,14 +52,13 @@ public class BluetoothGet implements GetService {
             return new GetResponse(get, NetInfStatus.FAILED);
         }
 
-        Log.d(TAG, "before");
-
-        // Publish to all relevant devices
+        // Get from all relevant devices
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         Set<BluetoothDevice> devices = mApi.getBluetoothDevices();
-        Log.d(TAG, "paired " + devices);
+        Log.d(TAG, "devices = " + devices);
         for (BluetoothDevice device : devices) {
 
-            Log.d(TAG, "iter");
+            Log.d(TAG, "device = " + device.getName());
 
             BluetoothSocket socket = null;
             DataInputStream in = null;
@@ -65,10 +66,11 @@ public class BluetoothGet implements GetService {
 
             try {
 
-                Log.d(TAG, "connect");
+                Log.d(TAG, adapter.getName() + " connecting to " + device.getName());
 
                 // Connect
                 socket = BluetoothCommon.connect(device);
+                Log.i(TAG, adapter.getName() + " connected to " + device.getName());
                 in = new DataInputStream(socket.getInputStream());
                 out = new DataOutputStream(socket.getOutputStream());
 
@@ -82,8 +84,10 @@ public class BluetoothGet implements GetService {
 
                 // Read
                 GetResponse response = parseGetResponse(get, in, out);
-                Node.log(LogEntry.newIncoming("Bluetooth"), response);
-                return response;
+                if (response.getStatus().isSuccess()) {
+                    Node.log(LogEntry.newIncoming("Bluetooth"), response);
+                    return response;
+                }
 
             } catch (IOException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
@@ -92,9 +96,9 @@ public class BluetoothGet implements GetService {
             } catch (NetInfException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
             } finally {
+                IOUtils.closeQuietly(socket);
                 IOUtils.closeQuietly(in);
                 IOUtils.closeQuietly(out);
-                IOUtils.closeQuietly(socket);
             }
 
         }
@@ -125,7 +129,7 @@ public class BluetoothGet implements GetService {
 
         if (jo.getInt("status") != NetInfStatus.OK.getCode()) {
             // Confirm that we got the response
-            BluetoothCommon.writeEos(out);
+            BluetoothCommon.writeConfirmation(out);
             return new GetResponse(get, NetInfStatus.FAILED);
         }
 
@@ -144,7 +148,7 @@ public class BluetoothGet implements GetService {
         }
 
         // Confirm that we got the response
-        BluetoothCommon.writeEos(out);
+        BluetoothCommon.writeConfirmation(out);
 
         return new GetResponse(get, NetInfStatus.OK, builder.build());
 

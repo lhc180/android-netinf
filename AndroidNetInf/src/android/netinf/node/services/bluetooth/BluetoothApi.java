@@ -5,7 +5,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -15,16 +14,14 @@ public class BluetoothApi implements Api {
 
     public static final String TAG = BluetoothApi.class.getSimpleName();
 
-    private ExecutorService mServerExecutor;
-    private ScheduledExecutorService mDiscoveryExecutor;
+    public static final UUID NETINF_UUID = UUID.fromString("111a8500-6ae2-11e2-bcfd-0800200c9a66");
+
+    private ExecutorService mServerExecutor = Executors.newSingleThreadExecutor();
+    private ScheduledExecutorService mDiscoveryExecutor = Executors.newSingleThreadScheduledExecutor();
     private BluetoothDiscovery mBluetoothDiscovery;
 
     public BluetoothApi(Context context) {
-
-        mServerExecutor = Executors.newFixedThreadPool(BluetoothCommon.UUIDS.size());
-        mDiscoveryExecutor = Executors.newSingleThreadScheduledExecutor();
         mBluetoothDiscovery = new BluetoothDiscovery(context);
-
     }
 
     public Set<BluetoothDevice> getBluetoothDevices() {
@@ -34,11 +31,8 @@ public class BluetoothApi implements Api {
     @Override
     public void start() {
         // TODO enable bluetooth discovery when relevant
-        mDiscoveryExecutor.scheduleWithFixedDelay(mBluetoothDiscovery, 0, BluetoothDiscovery.DELAY, TimeUnit.MILLISECONDS);
-        for (UUID uuid : BluetoothCommon.UUIDS) {
-            // TODO make certain UUIDs are restarted if thread crashes?
-            mServerExecutor.execute(new BluetoothServer(this, uuid));
-        }
+        // mDiscoveryExecutor.scheduleWithFixedDelay(mBluetoothDiscovery, 0, BluetoothDiscovery.DELAY, TimeUnit.MILLISECONDS);
+        mServerExecutor.execute(new BluetoothServer(this, NETINF_UUID));
     }
 
     @Override
