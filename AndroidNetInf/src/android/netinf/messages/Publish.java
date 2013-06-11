@@ -8,8 +8,8 @@ public class Publish extends Request {
 
     public static class Builder {
 
-        private Api mSource;
         private String mId = NetInfUtils.newId();
+        private Api mSource;
         private int mHopLimit = 0;
         private Ndo mNdo;
         private boolean mFullPut = false;
@@ -49,7 +49,9 @@ public class Publish extends Request {
     private final boolean mFullPut;
 
     private Publish(Builder builder) {
-        super(builder.mSource, builder.mId, builder.mHopLimit);
+        mId = builder.mId;
+        mSource = builder.mSource;
+        mHopLimit = builder.mHopLimit;
         mNdo = builder.mNdo;
         mFullPut = builder.mFullPut;
     }

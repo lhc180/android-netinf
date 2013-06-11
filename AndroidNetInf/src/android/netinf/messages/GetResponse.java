@@ -16,6 +16,14 @@ public class GetResponse extends Response {
         this(get, status, null);
     }
 
+    public GetResponse from(Get get) {
+        if (getStatus().isSuccess()) {
+            return new GetResponse(get, getStatus(), getNdo());
+        } else {
+            return new GetResponse(get, getStatus());
+        }
+    }
+
     @Override
     public Get getRequest() {
         return (Get) super.getRequest();

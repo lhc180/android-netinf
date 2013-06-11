@@ -38,7 +38,8 @@ import android.netinf.node.services.bluetooth.BluetoothApi;
 import android.netinf.node.services.bluetooth.BluetoothGet;
 import android.netinf.node.services.bluetooth.BluetoothPublish;
 import android.netinf.node.services.bluetooth.BluetoothSearch;
-import android.netinf.node.services.database.DatabaseService;
+import android.netinf.node.services.database.Database;
+import android.netinf.node.services.database.DatabaseImpl;
 import android.netinf.node.services.http.HttpGetService;
 import android.netinf.node.services.http.HttpPublishService;
 import android.netinf.node.services.http.HttpSearchService;
@@ -104,13 +105,13 @@ public class Node {
         // Load Settings
         PreferenceManager.setDefaultValues(context, R.xml.preferences, false);
 
+        // Database
+        Database db                         = new DatabaseImpl(context);
+
         // Create Api(s) and Service(s)
 
         // REST
         RestApi restApi                     = RestApi.getInstance();
-
-        // Database
-        DatabaseService db                  = new DatabaseService(context);
 
         // HTTP CL
         HttpPublishService httpPublish      = new HttpPublishService();
@@ -191,17 +192,13 @@ public class Node {
 
     public static Future<GetResponse> submit(final Get get) {
         Log.i(TAG, "GET submitted for execution: " + get);
+        return INSTANCE.mGetController.submit(get);
+    }
 
-        // Wrap the Get in a Callable
-        Callable<GetResponse> task = new Callable<GetResponse>() {
-            @Override
-            public GetResponse call() {
-                return INSTANCE.mGetController.perform(get);
-            }
-        };
 
-        // Submit the Callable to the Node's ExecutorService
-        return INSTANCE.mRequestExecutor.submit(task);
+    public static void submit(final GetResponse getResponse) {
+        Log.i(TAG, "GET-RESP submitted: " + getResponse);
+        INSTANCE.mGetController.submit(getResponse);
     }
 
     public static Future<SearchResponse> submit(final Search search) {

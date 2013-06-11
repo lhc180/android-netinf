@@ -19,14 +19,11 @@ import android.netinf.messages.Publish;
 import android.netinf.messages.PublishResponse;
 import android.netinf.messages.Search;
 import android.netinf.messages.SearchResponse;
-import android.netinf.node.get.GetService;
-import android.netinf.node.publish.PublishService;
-import android.netinf.node.search.SearchService;
 import android.util.Log;
 
-public class DatabaseService extends SQLiteOpenHelper implements PublishService, GetService, SearchService {
+public class DatabaseImpl extends SQLiteOpenHelper implements Database {
 
-    public static final String TAG = DatabaseService.class.getSimpleName();
+    public static final String TAG = DatabaseImpl.class.getSimpleName();
 
     public static final String DATABASE_NAME = "NdoDatabase.db3";
     private static final int DATABASE_VERSION = 1;
@@ -41,7 +38,7 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     private static final String COLUMN_HASH = "hash";
     private static final String COLUMN_NDO = "ndo";
 
-    public DatabaseService(Context context) {
+    public DatabaseImpl(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 

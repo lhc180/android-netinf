@@ -13,8 +13,8 @@ public class Search extends Request {
 
     public static class Builder {
 
-        private Api mSource;
         private String mId = NetInfUtils.newId();
+        private Api mSource;
         private int mHopLimit = 2;
         private long mTimeout = 1000;
         private Set<String> mTokens = new HashSet<String>();
@@ -48,7 +48,9 @@ public class Search extends Request {
     private final long mTimeout;
 
     private Search(Builder builder) {
-        super(builder.mSource, builder.mId, builder.mHopLimit);
+        mId = builder.mId;
+        mSource = builder.mSource;
+        mHopLimit = builder.mHopLimit;
         mTokens = Collections.unmodifiableSet(builder.mTokens);
         mTimeout = builder.mTimeout;
     }

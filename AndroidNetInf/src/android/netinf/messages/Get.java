@@ -1,28 +1,30 @@
 package android.netinf.messages;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import android.netinf.common.Ndo;
-import android.netinf.common.NetInfStatus;
 import android.netinf.common.NetInfUtils;
+import android.netinf.node.Node;
 import android.netinf.node.api.Api;
-import android.util.Log;
 
 public class Get extends Request {
 
     public static class Builder {
 
-        private Api mSource;
         private String mId = NetInfUtils.newId();
+        private Api mSource = Api.JAVA;
         private int mHopLimit = 2;
         private Ndo mNdo;
+//        private SettableFuture<GetResponse> mFutureResponse = SettableFuture.create();
 
         public Builder(Get get) {
-            mSource = get.getSource();
-            mId = get.getId();
-            mHopLimit = get.getHopLimit();
-            mNdo = get.getNdo();
+            mId = get.mId;
+            mSource = get.mSource;
+            mHopLimit = get.mHopLimit;
+            mNdo = get.mNdo;
+//            mFutureResponse = get.mFutureResponse;
         }
 
         public Builder(Api api, Ndo ndo) {
@@ -38,6 +40,7 @@ public class Get extends Request {
         }
 
         public Builder id(String id) { mId = id; return this; }
+        public Builder source(Api source) { mSource = source; return this; }
         public Builder hoplimit(int hops) { mHopLimit = hops; return this; }
         public Builder consumeHop() { mHopLimit = Math.max(mHopLimit - 1, 0); return this; }
 
@@ -50,38 +53,28 @@ public class Get extends Request {
     public static final String TAG = Get.class.getSimpleName();
 
     private final Ndo mNdo;
-    private CountDownLatch mDone;
-    private GetResponse mAggregatedResponse;
+//    private final SettableFuture<GetResponse> mFutureResponse;;
 
     private Get(Builder builder) {
-        super(builder.mSource, builder.mId, builder.mHopLimit);
+        mId = builder.mId;
+        mSource = builder.mSource;
+        mHopLimit = builder.mHopLimit;
         mNdo = builder.mNdo;
-        mDone = new CountDownLatch(1);
+//        mFutureResponse = builder.mFutureResponse;
     }
 
     public Ndo getNdo() {
         return mNdo;
     }
 
-    public GetResponse aggregate(long timeout, TimeUnit unit) {
-        try {
-            if (mDone.await(timeout, unit)) {
-                return mAggregatedResponse;
-            }
-        } catch (InterruptedException e) {
-            Log.wtf(TAG, "Aggregated GET interrupted", e);
-        }
-        return new GetResponse(this, NetInfStatus.FAILED);
+    public GetResponse getResponse(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        return Node.submit(this).get(timeout, unit);
     }
 
-    public void submitAggregatedResponse(GetResponse otherGetResponse) {
-        if (otherGetResponse.getStatus().isSuccess()) {
-            mAggregatedResponse = new GetResponse(this, otherGetResponse.getStatus(), otherGetResponse.getNdo());
-        } else {
-            mAggregatedResponse = new GetResponse(this, otherGetResponse.getStatus());
-        }
-        mDone.countDown();
-    }
+//
+//    public Future<GetResponse> getFutureResponse() {
+//        return mFutureResponse;
+//    }
 
     @Override
     public String toString() {
