@@ -11,13 +11,12 @@ public class SearchResponse extends Response {
 
     public static class Builder {
 
-        private Search mSearch;
+        private String mId;
         private NetInfStatus mStatus = NetInfStatus.OK;
         private Set<Ndo> mResults = Collections.synchronizedSet(new HashSet<Ndo>());
 
-        public Builder(Search search) {
-            mSearch = search;
-        }
+        public Builder(String id) { mId = id; }
+        public Builder(Search search) { mId = search.getId(); }
 
         public Builder addResult(Ndo result) { mResults.add(result); return this; }
         public Builder addResults(Set<Ndo> results) { mResults.addAll(results); return this; }
@@ -31,13 +30,9 @@ public class SearchResponse extends Response {
     private final Set<Ndo> mResults;
 
     private SearchResponse(Builder builder) {
-        super(builder.mSearch, builder.mStatus);
+        mId = builder.mId;
+        mStatus = builder.mStatus;
         mResults = Collections.unmodifiableSet(builder.mResults);
-    }
-
-    @Override
-    public Search getRequest() {
-        return (Search) super.getRequest();
     }
 
     public Set<Ndo> getResults() {

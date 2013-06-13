@@ -168,10 +168,10 @@ public class VisualizationService implements LogService {
     @Override
     public void log(LogEntry logEntry, PublishResponse publishResponse) {
         send(getId(),
-                publishResponse.getRequest().getId(),
+                publishResponse.getId(),
                 getStatus(publishResponse),
                 getDirection(logEntry),
-                publishResponse.getRequest().getNdo().getUri());
+                "?");
     }
 
     @Override
@@ -186,10 +186,10 @@ public class VisualizationService implements LogService {
     @Override
     public void log(LogEntry logEntry, GetResponse getResponse) {
         send(getId(),
-                getResponse.getRequest().getId(),
+                getResponse.getId(),
                 getStatus(getResponse),
                 getDirection(logEntry),
-                getResponse.getRequest().getNdo().getUri());
+                "?");
     }
 
     @Override
@@ -204,10 +204,10 @@ public class VisualizationService implements LogService {
     @Override
     public void log(LogEntry logEntry, SearchResponse searchResponse) {
         send(getId(),
-                searchResponse.getRequest().getId(),
+                searchResponse.getId(),
                 getStatus(searchResponse),
                 getDirection(logEntry),
-                searchResponse.getRequest().getTokens().toString().replace(" ", ""));
+                "?");
     }
 
 }

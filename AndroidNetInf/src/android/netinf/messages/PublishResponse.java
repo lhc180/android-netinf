@@ -4,13 +4,28 @@ import android.netinf.common.NetInfStatus;
 
 public class PublishResponse extends Response {
 
-    public PublishResponse(Publish publish, NetInfStatus status) {
-        super(publish, status);
+    public static class Builder {
+
+        private String mId;
+        private NetInfStatus mStatus = NetInfStatus.FAILED;
+
+        public Builder(String id) { mId = id; }
+        public Builder(Publish publish) { mId = publish.getId(); }
+
+        public Builder ok() { mStatus = NetInfStatus.OK; return this; }
+        public Builder failed() { mStatus = NetInfStatus.FAILED; return this; }
+        public Builder status(NetInfStatus status) { mStatus = status; return this; }
+        public Builder id(String id)  { mId = id; return this; }
+
+        public PublishResponse build() {
+            return new PublishResponse(this);
+        }
+
     }
 
-    @Override
-    public Publish getRequest() {
-        return (Publish) super.getRequest();
+    private PublishResponse(Builder builder) {
+        mId = builder.mId;
+        mStatus = builder.mStatus;
     }
 
 }

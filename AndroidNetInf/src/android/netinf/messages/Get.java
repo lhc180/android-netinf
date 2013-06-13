@@ -78,7 +78,7 @@ public class Get extends Request {
 
     @Override
     public String toString() {
-        return mNdo.getUri();
+        return "{id = " + mId + ", ndo = " + mNdo.getUri() + "}";
     }
 
 }

@@ -47,12 +47,12 @@ public class PublishController implements PublishService {
         for (PublishResponse response : responses) {
             if (response.getStatus().isSuccess()) {
                 Log.i(TAG, "PUBLISH of " + publish + " done. STATUS " + response.getStatus());
-                return new PublishResponse(publish, NetInfStatus.OK);
+                return new PublishResponse.Builder(publish).ok().build();
             }
         }
 
         Log.i(TAG, "PUBLISH of " + publish + " failed. STATUS " + NetInfStatus.FAILED);
-        return new PublishResponse(publish, NetInfStatus.FAILED);
+        return new PublishResponse.Builder(publish).failed().build();
 
     }
 

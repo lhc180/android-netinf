@@ -1,5 +1,6 @@
 package android.netinf.node.get;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import android.netinf.common.Ndo;
@@ -35,7 +36,7 @@ public class RequestAggregator {
      */
     public synchronized Set<Get> deaggregate(Get get) {
 
-        return mPending.removeAll(get.getNdo());
+        return new HashSet<Get>(mPending.removeAll(get.getNdo()));
 
     }
 

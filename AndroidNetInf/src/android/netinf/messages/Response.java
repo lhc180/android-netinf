@@ -3,19 +3,9 @@ package android.netinf.messages;
 import android.netinf.common.NetInfStatus;
 
 
-public abstract class Response {
+public abstract class Response extends Message {
 
-    private Request mRequest;
-    private NetInfStatus mStatus;
-
-    protected Response(Request request, NetInfStatus status) {
-        mRequest = request;
-        mStatus = status;
-    }
-
-    public Request getRequest() {
-        return mRequest;
-    }
+    protected NetInfStatus mStatus;
 
     public NetInfStatus getStatus() {
         return mStatus;

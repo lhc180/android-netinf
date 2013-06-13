@@ -6,7 +6,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import android.netinf.common.NetInfStatus;
 import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
 import android.netinf.node.Node;
@@ -38,19 +37,22 @@ public class GetController {
 
     public Future<GetResponse> submit(final Get get) {
 
+        Log.i(TAG, "GET submitted for execution: " + get);
         Node.log(LogEntry.newIncoming("UNKNOWN"), get);
 
-        SettableFuture<GetResponse> future = mInProgressTracker.start(get);
+        SettableFuture<GetResponse> future = mInProgressTracker.newFutureOrNull(get);
 
         if (future == null) {
 
             // Request is in progress
+            Log.d(TAG, "The GET " + get + " is already in progress");
             future = SettableFuture.create();
-            future.set(new GetResponse(get, NetInfStatus.FAILED));
+            future.set(new GetResponse.Builder(get).failed().build());
 
         } else if (!mRequestAggregator.aggregate(get)) {
 
             // Request was not aggregates
+            Log.d(TAG, "The GET " + get + " was NOT aggregated");
             mGetExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -58,6 +60,8 @@ public class GetController {
                 }
             });
 
+        } else {
+            Log.d(TAG, "The GET " + get + " was aggregated");
         }
 
         return future;
@@ -72,10 +76,9 @@ public class GetController {
         }
 
         // Assume it will fail
-        GetResponse getResponse = new GetResponse(get, NetInfStatus.FAILED);
+        GetResponse getResponse = new GetResponse.Builder(get).failed().build();
 
         // First check local services
-        Log.i(TAG, "Local GET of " + get);
         for (GetService getService : mLocalServices.get(get.getSource())) {
             getResponse = getService.perform(get);
             if (getResponse.getStatus().isSuccess()) {
@@ -85,7 +88,6 @@ public class GetController {
 
         // Then check other services as needed
         if (getResponse.getStatus().isError() && get.getHopLimit() > 0) {
-            Log.i(TAG, "Remote GET of " + get);
             for (GetService getService : mRemoteServices.get(get.getSource())) {
                 getResponse = getService.perform(get);
                 if (getResponse.getStatus().isSuccess()) {
@@ -97,28 +99,20 @@ public class GetController {
         Log.i(TAG, "GET of " + get + " done. STATUS " + getResponse.getStatus());
         Node.log(LogEntry.newOutgoing("UNKNOWN"), getResponse);
 
-        handle(getResponse);
-
-    }
-
-    private void handle(GetResponse getResponse) {
-
         // Get aggregated requests
-        Set<Get> gets = mRequestAggregator.deaggregate(getResponse.getRequest());
+        Set<Get> gets = mRequestAggregator.deaggregate(get);
 
         // Add non-aggregated request
-        gets.add(getResponse.getRequest());
+        gets.add(get);
 
         // Stop all the Gets and set their futures
-        Map<Get, SettableFuture<GetResponse>> futures = mInProgressTracker.stop(gets);
-        for (Get get : futures.keySet()) {
-            SettableFuture<GetResponse> future = futures.get(get);
-            future.set(getResponse.from(get));
+        Map<Get, SettableFuture<GetResponse>> futures = mInProgressTracker.stopFutures(gets);
+        for (Get aggregated : futures.keySet()) {
+            SettableFuture<GetResponse> future = futures.get(aggregated);
+            future.set(new GetResponse.Builder(getResponse).id(aggregated.getId()).build());
         }
 
     }
-
-
 
 //        // Check if the Get is already in progress to avoid network loops
 //        boolean started = mInProgressTracker.tryToStart(get);

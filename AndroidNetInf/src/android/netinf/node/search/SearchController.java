@@ -5,19 +5,23 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import android.netinf.common.ApiToServiceMap;
 import android.netinf.messages.Search;
 import android.netinf.messages.SearchResponse;
+import android.netinf.node.api.Api;
 import android.util.Log;
+
+import com.google.common.collect.SetMultimap;
 
 public class SearchController implements SearchService {
 
     public static final String TAG = SearchController.class.getSimpleName();
 
-    private ApiToServiceMap<SearchService> mServices;
+    private SetMultimap<Api, SearchService> mLocalServices;
+    private SetMultimap<Api, SearchService> mRemoteServices;
 
-    public SearchController(ApiToServiceMap<SearchService> services) {
-        mServices = services;
+    public SearchController(SetMultimap<Api, SearchService> local, SetMultimap<Api, SearchService> remote) {
+        mLocalServices = local;
+        mRemoteServices = remote;
     }
 
     @Override
@@ -28,10 +32,10 @@ public class SearchController implements SearchService {
 
         // Get search services to be used
         Log.i(TAG, "Local SEARCH of " + search);
-        Set<SearchService> searchServices = new LinkedHashSet<SearchService>(mServices.getLocalServices(search.getSource()));
+        Set<SearchService> searchServices = new LinkedHashSet<SearchService>(mLocalServices.get(search.getSource()));
         if (search.getHopLimit() > 0) {
             Log.i(TAG, "Remote SEARCH of " + search);
-            searchServices.addAll(mServices.getRemoteServices(search.getSource()));
+            searchServices.addAll(mRemoteServices.get(search.getSource()));
         }
 
         final CountDownLatch pendingSearches = new CountDownLatch(searchServices.size());

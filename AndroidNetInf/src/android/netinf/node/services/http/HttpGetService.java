@@ -32,7 +32,6 @@ import android.netinf.common.Locator;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
-import android.netinf.common.NetInfStatus;
 import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
 import android.netinf.node.Node;
@@ -77,7 +76,7 @@ public class HttpGetService implements GetService {
             }
         }
 
-        return new GetResponse(get, NetInfStatus.FAILED);
+        return new GetResponse.Builder(get).failed().build();
     }
 
     private HttpPost createGet(String peer, Get get) throws UnsupportedEncodingException {
@@ -138,7 +137,7 @@ public class HttpGetService implements GetService {
             Log.w(TAG, "Failed to parse metadata", e);
         }
 
-        return new GetResponse(get, NetInfStatus.OK, builder.build());
+        return new GetResponse.Builder(get).ok(get).build();
     }
 
     private GetResponse parseBinaryResponse(Get get, HttpResponse response) throws NetInfException {
@@ -214,7 +213,7 @@ public class HttpGetService implements GetService {
             Log.w(TAG, "Failed to parse metadata", e);
         }
 
-        return new GetResponse(get, NetInfStatus.OK, builder.build());
+        return new GetResponse.Builder(get).ok(get).build();
 
     }
 
@@ -237,7 +236,7 @@ public class HttpGetService implements GetService {
         }
 
         Ndo ndo = new Ndo.Builder(get.getNdo()).build();
-        return new GetResponse(get, NetInfStatus.OK, ndo);
+        return new GetResponse.Builder(get).ok(get).build();
 
     }
 

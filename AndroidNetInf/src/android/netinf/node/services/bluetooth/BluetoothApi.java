@@ -17,6 +17,8 @@ public class BluetoothApi implements Api {
     public static final UUID NETINF_UUID = UUID.fromString("111a8500-6ae2-11e2-bcfd-0800200c9a66");
 
     private ExecutorService mServerExecutor = Executors.newSingleThreadExecutor();
+    private BluetoothSocketManager mManager = new BluetoothSocketManager(this);
+
     private ScheduledExecutorService mDiscoveryExecutor = Executors.newSingleThreadScheduledExecutor();
     private BluetoothDiscovery mBluetoothDiscovery;
 
@@ -26,6 +28,10 @@ public class BluetoothApi implements Api {
 
     public Set<BluetoothDevice> getBluetoothDevices() {
         return mBluetoothDiscovery.getBluetoothDevices();
+    }
+
+    public BluetoothSocketManager getManager() {
+        return mManager;
     }
 
     @Override

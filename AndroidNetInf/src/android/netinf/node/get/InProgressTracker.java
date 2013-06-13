@@ -21,10 +21,22 @@ public class InProgressTracker<K extends Request, V extends Response> {
      *     A Future representing the result of the request if the request has a new id,
      *     otherwise null
      */
-    public synchronized SettableFuture<V> start(K request) {
+    public synchronized SettableFuture<V> newFutureOrNull(K request) {
 
         if (mInProgress.containsKey(request.getId())) {
             return null;
+        } else {
+            SettableFuture<V> future = SettableFuture.create();
+            mInProgress.put(request.getId(), future);
+            return future;
+        }
+
+    }
+
+    public synchronized SettableFuture<V> newFutureOrInProgress(K request) {
+
+        if (mInProgress.containsKey(request.getId())) {
+            return mInProgress.get(request.getId());
         } else {
             SettableFuture<V> future = SettableFuture.create();
             mInProgress.put(request.getId(), future);
@@ -41,7 +53,7 @@ public class InProgressTracker<K extends Request, V extends Response> {
      *     A map with the subset of Gets that were actually stopped as keys
      *     and their corresponding Futures as values. Could be empty.
      */
-    public synchronized Map<K, SettableFuture<V>> stop(Set<K> requests) {
+    public synchronized Map<K, SettableFuture<V>> stopFutures(Set<K> requests) {
 
         Map<K, SettableFuture<V>> futures = new HashMap<K, SettableFuture<V>>();
         for (K request : requests) {
@@ -54,8 +66,20 @@ public class InProgressTracker<K extends Request, V extends Response> {
         return futures;
     }
 
+    /**
+     * Tries to stop a Get waiting for a given Response and return its Future.
+     * @param response
+     *     The Response of the waiting Get
+     * @return
+     *     The Future of the waiting Get if it exists, otherwise null
+     */
+    public synchronized SettableFuture<V> stopFuture(V response) {
+        return mInProgress.remove(response.getId());
+    }
 
-
+//    public synchronized ResponseFuture<V> getFutureOrNull(V response) {
+//        return mInProgress.get(response.getId());
+//    }
 
 
 
