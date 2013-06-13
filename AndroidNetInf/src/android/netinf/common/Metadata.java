@@ -21,7 +21,7 @@ import android.util.Log;
 public class Metadata implements Serializable {
 
     /** Log Tag. */
-    public static final String TAG = "Metadata";
+    public static final String TAG = Metadata.class.getSimpleName();
 
     /** Metadata (Should not contain outer "meta":{...}). */
     private JSONObject mMetadata = new JSONObject();
@@ -199,7 +199,7 @@ public class Metadata implements Serializable {
         } else if (object instanceof JSONArray) {
             return matchesJsonArray((JSONArray) object, tokens);
         } else {
-            Log.v(TAG, "Unhandled Object: " + object.getClass());
+            Log.w(TAG, "Unhandled Object: " + object.getClass());
             return false;
         }
     }

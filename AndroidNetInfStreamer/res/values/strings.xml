@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">NetInf Streamer</string>
+    <string name="menu_record">Record</string>
+    <string name="menu_play">Play</string>
+    <string name="menu_clear">Clear</string>
+    <string name="menu_preference">Settings</string>
+
+</resources>

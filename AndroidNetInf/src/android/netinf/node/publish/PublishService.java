@@ -1,9 +1,10 @@
 package android.netinf.node.publish;
 
-import android.netinf.common.NetInfStatus;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
 
 public interface PublishService {
 
-    public NetInfStatus publish(Publish publish);
+    public PublishResponse perform(Publish publish);
 
 }

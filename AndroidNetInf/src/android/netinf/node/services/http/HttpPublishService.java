@@ -20,19 +20,19 @@ import org.apache.http.params.HttpParams;
 import android.netinf.common.Locator;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
-import android.netinf.node.publish.Publish;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
 import android.netinf.node.publish.PublishService;
 import android.util.Log;
 
 public class HttpPublishService implements PublishService {
 
-    public static final String TAG = "HttpPublishService";
+    public static final String TAG = HttpPublishService.class.getSimpleName();
 
     public static final int TIMEOUT = 2000;
 
     @Override
-    public NetInfStatus publish(Publish publish) {
-        Log.v(TAG, "publish()");
+    public PublishResponse perform(Publish publish) {
         Log.i(TAG, "HTTP CL received PUBLISH: " + publish);
 
         // HTTP Client
@@ -42,18 +42,18 @@ public class HttpPublishService implements PublishService {
         HttpClient client = new DefaultHttpClient(params);
 
         // Publish to all peers
-        NetInfStatus result = NetInfStatus.I_FAILED;
+        NetInfStatus status = NetInfStatus.FAILED;
         for (String peer : HttpCommon.PEERS) {
             try {
                 HttpResponse response = client.execute(createPublish(peer, publish));
                 Log.d(TAG, IOUtils.toString(response.getEntity().getContent()));
-                int status = response.getStatusLine().getStatusCode();
+                int code = response.getStatusLine().getStatusCode();
                 // NiProxy returns 200, Erlang returns 201
-                if (status == HttpStatus.SC_CREATED || status == HttpStatus.SC_OK) {
+                if (code == HttpStatus.SC_CREATED || code == HttpStatus.SC_OK) {
                     Log.i(TAG, "PUBLISH to " + peer + " succeeded");
-                    result = NetInfStatus.OK;
+                    status = NetInfStatus.OK;
                 } else {
-                    Log.e(TAG, "PUBLISH to " + peer + " failed: " + status);
+                    Log.e(TAG, "PUBLISH to " + peer + " failed: " + code);
                 }
 
             } catch (ClientProtocolException e) {
@@ -65,11 +65,11 @@ public class HttpPublishService implements PublishService {
             }
         }
 
-        return result;
+        return new PublishResponse.Builder(publish).status(status).build();
+
     }
 
     private HttpPost createPublish(String peer, Publish publish) throws UnsupportedEncodingException {
-        Log.v(TAG, "createPublish()");
 
         Ndo ndo = publish.getNdo();
 

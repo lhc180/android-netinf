@@ -9,47 +9,43 @@ import java.util.concurrent.ScheduledExecutorService;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.netinf.node.api.Api;
-import android.util.Log;
 
 public class BluetoothApi implements Api {
 
-    public static final String TAG = "BluetoothApi";
+    public static final String TAG = BluetoothApi.class.getSimpleName();
 
-    private ExecutorService mServerExecutor;
-    private ScheduledExecutorService mDiscoveryExecutor;
+    public static final UUID NETINF_UUID = UUID.fromString("111a8500-6ae2-11e2-bcfd-0800200c9a66");
+
+    private ExecutorService mServerExecutor = Executors.newSingleThreadExecutor();
+    private BluetoothSocketManager mManager = new BluetoothSocketManager(this);
+
+    private ScheduledExecutorService mDiscoveryExecutor = Executors.newSingleThreadScheduledExecutor();
     private BluetoothDiscovery mBluetoothDiscovery;
 
     public BluetoothApi(Context context) {
-
-        mServerExecutor = Executors.newFixedThreadPool(BluetoothCommon.UUIDS.size());
-        mDiscoveryExecutor = Executors.newSingleThreadScheduledExecutor();
         mBluetoothDiscovery = new BluetoothDiscovery(context);
-
     }
 
     public Set<BluetoothDevice> getBluetoothDevices() {
         return mBluetoothDiscovery.getBluetoothDevices();
     }
 
+    public BluetoothSocketManager getManager() {
+        return mManager;
+    }
+
     @Override
     public void start() {
-        Log.v(TAG, "start()");
         // TODO enable bluetooth discovery when relevant
-//        mDiscoveryExecutor.scheduleWithFixedDelay(mBluetoothDiscovery, 0, BluetoothDiscovery.DELAY, TimeUnit.MILLISECONDS);
-        for (UUID uuid : BluetoothCommon.UUIDS) {
-            // TODO make certain UUIDs are restarted if thread crashes?
-            mServerExecutor.execute(new BluetoothServer(this, uuid));
-        }
+        // mDiscoveryExecutor.scheduleWithFixedDelay(mBluetoothDiscovery, 0, BluetoothDiscovery.DELAY, TimeUnit.MILLISECONDS);
+        mServerExecutor.execute(new BluetoothServer(this, NETINF_UUID));
     }
 
     @Override
     public void stop() {
-        Log.v(TAG, "stop()");
         // TODO clean up stuff properly
         mDiscoveryExecutor.shutdown();
         mServerExecutor.shutdown();
     }
-
-
 
 }

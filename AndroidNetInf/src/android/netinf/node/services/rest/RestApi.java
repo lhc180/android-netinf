@@ -12,7 +12,7 @@ import android.util.Log;
 
 public class RestApi implements Api {
 
-    public static final String TAG = "RestApi";
+    public static final String TAG = RestApi.class.getSimpleName();
 
     /** Singleton Instance. */
     private static final RestApi INSTANCE = new RestApi();
@@ -35,7 +35,6 @@ public class RestApi implements Api {
 
     @Override
     public void start() {
-        Log.v(TAG, "start()");
         try {
             mComponent.start();
         } catch (Exception e) {
@@ -45,7 +44,6 @@ public class RestApi implements Api {
 
     @Override
     public void stop() {
-        Log.v(TAG, "stop()");
         try {
             mComponent.stop();
         } catch (Exception e) {

@@ -18,7 +18,7 @@ import android.util.Log;
 
 public class BluetoothDiscovery implements Runnable {
 
-    public static final String TAG = "BluetoothDiscovery";
+    public static final String TAG = BluetoothDiscovery.class.getSimpleName();
 
     /** How often to run the Bluetooth discovery. */
     public static final int DELAY = 600000;
@@ -118,7 +118,7 @@ public class BluetoothDiscovery implements Runnable {
 
                 // Found BluetoothDevice, add it to the new list
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                Log.v(TAG, "Found Bluetooth device: " + device.getName() + ", " + device.getAddress());
+                Log.i(TAG, "Bluetooth device found: " + device.getName() + ", " + device.getAddress());
                 mNewDevices.put(device.getAddress(), new SeenDevice(device, new Date()));
 
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
@@ -134,10 +134,26 @@ public class BluetoothDiscovery implements Runnable {
 
     public Set<BluetoothDevice> getBluetoothDevices() {
         // TODO DEBUG, return bonded devices
-        for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
-            Log.d(TAG, "bonded: " + device.getName());
+//        for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
+//            Log.d(TAG, "(Debug) Ignoring Bluetooth discovery, returning bonded device(s) instead: " + device.getName());
+//        }
+//        return BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        Set<BluetoothDevice> devices = adapter.getBondedDevices();
+        StringBuilder builder = new StringBuilder();
+        builder.append("Ignoring Bluetooth discovery, returning bonded device(s) instead: [");
+        for (BluetoothDevice device : devices) {
+            builder.append(device.getName());
+            builder.append(", ");
         }
-        return BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+        if (devices.size() > 0) {
+            builder.setLength(builder.length() - 2);
+        }
+        builder.append("]");
+        Log.d(TAG, builder.toString());
+        return devices;
+
 
 //        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>();
 //        for (SeenDevice seenDevice : mSeenDevices.values()) {

@@ -1,49 +1,58 @@
 package android.netinf.node.publish;
 
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.List;
 
 import android.netinf.common.NetInfStatus;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
 import android.netinf.node.api.Api;
 import android.util.Log;
 
-public class PublishController {
+import com.google.common.collect.SetMultimap;
 
-    public static final String TAG = "PublishController";
+public class PublishController implements PublishService {
 
-    private Map<Api, Set<PublishService>> mPublishServices;
+    public static final String TAG = PublishController.class.getSimpleName();
 
-    public PublishController() {
-        mPublishServices = new HashMap<Api, Set<PublishService>>();
+    private SetMultimap<Api, PublishService> mLocalServices;
+    private SetMultimap<Api, PublishService> mRemoteServices;
+
+    public PublishController(SetMultimap<Api, PublishService> local, SetMultimap<Api, PublishService> remote) {
+        mLocalServices = local;
+        mRemoteServices = remote;
     }
 
-    public void registerPublishService(Api source, PublishService destination) {
-        if (!mPublishServices.containsKey(source)) {
-            mPublishServices.put(source, new LinkedHashSet<PublishService>());
+    @Override
+    public PublishResponse perform(Publish incomingPublish) {
+
+        // Reduce hop limit
+        Publish publish = new Publish.Builder(incomingPublish).consumeHop().build();
+
+        List<PublishResponse> responses = new LinkedList<PublishResponse>();
+
+        // Publish to local services
+        for (PublishService publishService : mLocalServices.get(publish.getSource())) {
+            responses.add(publishService.perform(publish));
         }
-        mPublishServices.get(source).add(destination);
-    }
 
-    public NetInfStatus publish(Publish publish) {
-        Log.v(TAG, "publish()");
-
-        NetInfStatus finalStatus = NetInfStatus.I_FAILED;
-
-        for (PublishService publishService : mPublishServices.get(publish.getSource())) {
-            NetInfStatus partialStatus = publishService.publish(publish);
-            if (partialStatus.equals(NetInfStatus.OK)) {
-                finalStatus = NetInfStatus.OK;
+        // Publish to remote services
+        if (publish.getHopLimit() > 0) {
+            for (PublishService publishService : mRemoteServices.get(publish.getSource())) {
+                responses.add(publishService.perform(publish));
             }
         }
 
-        if (finalStatus.equals(NetInfStatus.OK)) {
-            Log.i(TAG, "PUBLISH succeeded at least once");
-        } else {
-            Log.i(TAG, "PUBLISH failed to all");
+        // Decide aggregated response status
+        for (PublishResponse response : responses) {
+            if (response.getStatus().isSuccess()) {
+                Log.i(TAG, "PUBLISH of " + publish + " done. STATUS " + response.getStatus());
+                return new PublishResponse.Builder(publish).ok().build();
+            }
         }
-        return finalStatus;
+
+        Log.i(TAG, "PUBLISH of " + publish + " failed. STATUS " + NetInfStatus.FAILED);
+        return new PublishResponse.Builder(publish).failed().build();
 
     }
 

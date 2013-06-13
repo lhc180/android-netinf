@@ -3,10 +3,7 @@ package android.netinf.common;
 public class NetInfStatus {
 
     public static final NetInfStatus OK = new NetInfStatus(200);
-    public static final NetInfStatus I_FAILED = new NetInfStatus(500);
-    public static final NetInfStatus YOU_FAILED = new NetInfStatus(400);
-    public static final NetInfStatus TIMEOUT = new NetInfStatus(504);
-    public static final NetInfStatus DUPLICATE_REQUEST = new NetInfStatus(508);
+    public static final NetInfStatus FAILED = new NetInfStatus(404);
 
     private int mCode;
 
@@ -18,8 +15,36 @@ public class NetInfStatus {
         return mCode;
     }
 
+    public boolean equals(int code) {
+        return code == mCode;
+    }
+
     public boolean equals(NetInfStatus status) {
         return mCode == status.mCode;
+    }
+
+    public boolean isSuccess() {
+        return equals(OK);
+    }
+
+    public boolean isError() {
+        return equals(FAILED);
+    }
+
+    public static NetInfStatus valueOf(int code) {
+        return new NetInfStatus(code);
+    }
+
+    @Override
+    public String toString() {
+        // TODO use a map?
+        if (equals(NetInfStatus.OK)) {
+            return "OK";
+        } else if (equals(NetInfStatus.FAILED)) {
+            return "FAILED";
+        } else {
+            return "UNKNOWN: " + mCode;
+        }
     }
 
 }

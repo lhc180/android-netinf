@@ -12,7 +12,7 @@ import java.util.Set;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -32,19 +32,21 @@ import android.netinf.common.Locator;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
-import android.netinf.node.get.Get;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
+import android.netinf.node.Node;
 import android.netinf.node.get.GetService;
+import android.netinf.node.logging.LogEntry;
 import android.util.Log;
 
 public class HttpGetService implements GetService {
 
-    public static final String TAG = "HttpGetService";
+    public static final String TAG = HttpGetService.class.getSimpleName();
 
     public static final int TIMEOUT = 2000;
 
     @Override
-    public Ndo get(Get get) {
-        Log.v(TAG, "get()");
+    public GetResponse perform(Get get) {
         Log.i(TAG, "HTTP CL received GET: " + get);
 
         // HTTP Client
@@ -54,14 +56,15 @@ public class HttpGetService implements GetService {
         HttpClient client = new DefaultHttpClient(params);
 
         // Repeat GET until ok result
-        Ndo result = null;
         for (String peer : HttpCommon.PEERS) {
             try {
                 HttpResponse response = client.execute(createGet(peer, get));
-                result = parse(get.getNdo(), response);
-//                if (result != null) {
-//                    break;
-//                }
+                Node.log(LogEntry.newOutgoing("HTTP"), get);
+                GetResponse getResponse = parse(get, response);
+                Node.log(LogEntry.newIncoming("HTTP"), getResponse);
+                if (getResponse.getStatus().isSuccess()) {
+                    return getResponse;
+                }
             } catch (ClientProtocolException e) {
                 Log.e(TAG, "GET to " + peer + " failed", e);
             } catch (UnsupportedEncodingException e) {
@@ -73,11 +76,10 @@ public class HttpGetService implements GetService {
             }
         }
 
-        return result;
+        return new GetResponse.Builder(get).failed().build();
     }
 
     private HttpPost createGet(String peer, Get get) throws UnsupportedEncodingException {
-        Log.v(TAG, "createGet()");
 
         HttpPost post = new HttpPost(peer + "/netinfproto/get");
         post.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -95,24 +97,22 @@ public class HttpGetService implements GetService {
 
     }
 
-    private Ndo parse(Ndo ndo, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parse()");
+    private GetResponse parse(Get get, HttpResponse response) throws NetInfException {
 
         int status = response.getStatusLine().getStatusCode();
 
         switch (status) {
             case HttpStatus.SC_NON_AUTHORITATIVE_INFORMATION:
-                return parseLocatorResponse(ndo, response);
+                return parseLocatorResponse(get, response);
             case HttpStatus.SC_OK:
-                return parseBinaryResponse(ndo, response);
+                return parseBinaryResponse(get, response);
             default:
                 throw new NetInfException("Unhandled status code: " + status);
         }
 
     }
 
-    private Ndo parseLocatorResponse(Ndo ndo, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parseLocatorsResponse()");
+    private GetResponse parseLocatorResponse(Get get, HttpResponse response) throws NetInfException {
 
         // Get JSON
         HttpEntity entity = HttpCommon.getEntity(response);
@@ -121,45 +121,40 @@ public class HttpGetService implements GetService {
         JSONObject jo = HttpCommon.parseJson(json);
 
         // Result NDO
-        Ndo result = new Ndo(ndo);
+        Ndo.Builder builder = new Ndo.Builder(get.getNdo());
 
         // Locators (required, locator response without locators not useful)
         try {
-            result.addLocators(getLocators(jo));
+            builder.locators(getLocators(jo));
         } catch (JSONException e) {
             throw new NetInfException("Failed to parse locators", e);
         }
 
         // Metadata (optional)
         try {
-            result.addMetadata(getMetadata(jo));
+            builder.metadata(getMetadata(jo));
         } catch (JSONException e) {
             Log.w(TAG, "Failed to parse metadata", e);
         }
 
-        return result;
+        return new GetResponse.Builder(get).ok(get).build();
     }
 
-    private Ndo parseBinaryResponse(Ndo ndo, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parseBinaryResponse()");
+    private GetResponse parseBinaryResponse(Get get, HttpResponse response) throws NetInfException {
 
         String contentType = HttpCommon.getContentType(response);
         if (contentType.startsWith("multipart/form-data")) {
             // Expected
-            return parseMultipart(ndo, response);
+            return parseMultipart(get, response);
         } else if (contentType.startsWith("application/octet-stream")) {
             // NiProxy
-            return parseBinary(ndo, response);
+            return parseBinary(get, response);
         } else {
             throw new NetInfException("Unhandled content-type");
         }
     }
 
-    private Ndo parseMultipart(Ndo ndo, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parseMultipart()");
-
-        // Result NDO
-        Ndo result = new Ndo(ndo);
+    private GetResponse parseMultipart(Get get, HttpResponse response) throws NetInfException {
 
         // Multipart Boundary
         String contentType = HttpCommon.getContentType(response);
@@ -180,7 +175,7 @@ public class HttpGetService implements GetService {
         try {
 
             jsonStream = new ByteArrayOutputStream();
-            binaryStream = new FileOutputStream(result.getOctets());
+            binaryStream = new FileOutputStream(get.getNdo().getOctets());
 
             // TODO Is the order of the fields always the same?
             multipartStream.readHeaders();
@@ -203,35 +198,33 @@ public class HttpGetService implements GetService {
             IOUtils.closeQuietly(binaryStream);
         }
 
-        // Update result NDO
+        // Result NDO
+        Ndo.Builder builder = new Ndo.Builder(get.getNdo());
+
         JSONObject jo = HttpCommon.parseJson(jsonStream.toString());
         try {
-            result.addLocators(getLocators(jo));
+            builder.locators(getLocators(jo));
         } catch (JSONException e) {
             Log.w(TAG, "Failed to parse locators", e);
         }
         try {
-            result.addMetadata(getMetadata(jo));
+            builder.metadata(getMetadata(jo));
         } catch (JSONException e) {
             Log.w(TAG, "Failed to parse metadata", e);
         }
 
-        return result;
+        return new GetResponse.Builder(get).ok(get).build();
 
     }
 
-    private Ndo parseBinary(Ndo ndo, HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parseBinary()");
-
-        // Result NDO
-        Ndo result = new Ndo(ndo);
+    private GetResponse parseBinary(Get get, HttpResponse response) throws NetInfException {
 
         // Read
         InputStream in = null;
         OutputStream out = null;
         try {
             in = HttpCommon.getContent(HttpCommon.getEntity(response));
-            out = new FileOutputStream(ndo.getOctets());
+            out = get.getNdo().newCacheStream();
             IOUtils.copy(in, out);
             in.close();
             out.close();
@@ -242,12 +235,12 @@ public class HttpGetService implements GetService {
             IOUtils.closeQuietly(out);
         }
 
-        return result;
+        Ndo ndo = new Ndo.Builder(get.getNdo()).build();
+        return new GetResponse.Builder(get).ok(get).build();
 
     }
 
     private Set<Locator> getLocators(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getLocators");
         Set<Locator> result = new LinkedHashSet<Locator>();
         JSONArray locs = jo.getJSONArray("loc");
         for (int i = 0; i < locs.length(); i++) {
@@ -258,7 +251,6 @@ public class HttpGetService implements GetService {
     }
 
     private Metadata getMetadata(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getMetadata");
         return new Metadata(jo.getJSONObject("metadata"));
     }
 

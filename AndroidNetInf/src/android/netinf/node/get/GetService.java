@@ -1,9 +1,10 @@
 package android.netinf.node.get;
 
-import android.netinf.common.Ndo;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
 
 public interface GetService {
 
-    public Ndo get(Get get);
+    public GetResponse perform(Get get);
 
 }

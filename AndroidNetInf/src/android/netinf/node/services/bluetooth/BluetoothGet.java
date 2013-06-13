@@ -1,26 +1,29 @@
 package android.netinf.node.services.bluetooth;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.netinf.common.Locator;
-import android.netinf.common.Ndo;
-import android.netinf.common.NetInfException;
-import android.netinf.common.NetInfStatus;
-import android.netinf.node.get.Get;
+import android.netinf.messages.Get;
+import android.netinf.messages.GetResponse;
+import android.netinf.node.Node;
 import android.netinf.node.get.GetService;
+import android.netinf.node.logging.LogEntry;
 import android.util.Log;
 
 public class BluetoothGet implements GetService {
 
     public static final String TAG = BluetoothGet.class.getSimpleName();
+
+    public static final long TIMEOUT = 100000;
 
     private BluetoothApi mApi;
 
@@ -29,9 +32,13 @@ public class BluetoothGet implements GetService {
     }
 
     @Override
-    public Ndo get(Get get) {
-        Log.v(TAG, "get()");
+    public GetResponse perform(Get get) {
         Log.i(TAG, "Bluetooth CL received GET: " + get);
+
+        // Check if Bluetooth is available, could be restarting
+        if (!BluetoothCommon.isBluetoothAvailable()) {
+            return new GetResponse.Builder(get).failed().build();
+        }
 
         // Create JSON representation of the Get
         JSONObject jo = null;
@@ -39,40 +46,48 @@ public class BluetoothGet implements GetService {
             jo = createGetJson(get);
         } catch (JSONException e) {
             Log.wtf(TAG, "Failed to create JSON representation of Get", e);
-            return null;
+            return new GetResponse.Builder(get).failed().build();
         }
 
-        // Publish to all relevant devices
-        for (BluetoothDevice device : mApi.getBluetoothDevices()) {
-
-            BluetoothSocket socket = null;
-            DataInputStream in = null;
-            DataOutputStream out = null;
+        // Get from all relevant devices
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        Set<BluetoothDevice> devices = mApi.getBluetoothDevices();
+        for (BluetoothDevice device : devices) {
 
             try {
 
-                // Connect
-                socket = BluetoothCommon.connect(device);
-                in = new DataInputStream(socket.getInputStream());
-                out = new DataOutputStream(socket.getOutputStream());
+                Log.d(TAG, adapter.getName() + " getting socket to " + device.getName());
 
-                // Send
-                BluetoothCommon.write(jo, out);
+                // Get BluetoothSocket
+                BluetoothSocket socket = mApi.getManager().getSocket(device);
+                Log.i(TAG, adapter.getName() + " got socket to " + device.getName() + ", sending GET " + get);
 
-                // Read
-                return handleGetResponse(get, in);
+                // Send Get
+                BluetoothCommon.write(jo, socket);
+                Node.log(LogEntry.newOutgoing("Bluetooth"), get);
+
+                // Wait for Response
+                GetResponse response = mApi.getManager().getResponse(get).get(TIMEOUT, TimeUnit.MILLISECONDS);
+                Node.log(LogEntry.newIncoming("Bluetooth"), response);
+                if (response.getStatus().isSuccess()) {
+                    return response;
+                }
 
             } catch (IOException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
-            } catch (JSONException e) {
+            } catch (InterruptedException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
-            } catch (NetInfException e) {
+            } catch (ExecutionException e) {
+                Log.e(TAG, "GET to " + device.getName() + " failed", e);
+            } catch (TimeoutException e) {
                 Log.e(TAG, "GET to " + device.getName() + " failed", e);
             }
 
         }
 
-        return null;
+        Log.d(TAG, "after");
+
+        return new GetResponse.Builder(get).failed().build();
 
     }
 
@@ -82,36 +97,13 @@ public class BluetoothGet implements GetService {
 
         jo.put("type", "get");
         jo.put("msgid", get.getId());
+        jo.put("hoplimit", get.getHopLimit());
         jo.put("uri", get.getNdo().getUri());
 
         return jo;
 
     }
 
-    private Ndo handleGetResponse(Get get, DataInputStream in) throws IOException, JSONException, NetInfException {
 
-        JSONObject jo = BluetoothCommon.readJson(in);
-
-        if (jo.getInt("status") != NetInfStatus.OK.getCode()) {
-            return null;
-        }
-
-        Ndo ndo = new Ndo(get.getNdo());
-
-        if (jo.has("octets") && jo.getBoolean("octets")) {
-            byte[] octets = BluetoothCommon.readFile(in);
-            ndo.setOctets(octets);
-        }
-
-        if (jo.has("locators")){
-            JSONArray locators = jo.getJSONArray("locators");
-            for (int i = 0; i < locators.length(); i++) {
-                ndo.addLocator(Locator.fromString(locators.getString(i)));
-            }
-        }
-
-        return ndo;
-
-    }
 
 }

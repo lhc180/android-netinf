@@ -1,21 +1,26 @@
 package android.netinf.common;
 
+import java.io.File;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.util.Base64;
 import android.util.Log;
 
 public class NetInfUtils {
 
-    public static final String TAG = "NetInfUtils";
+    public static final String TAG = NetInfUtils.class.getSimpleName();
 
     public static String getAuthority(String uri) throws NetInfException {
-        Log.v(TAG, "getAuthority()");
         Pattern pattern = Pattern.compile("://(.*?)/");
         Matcher matcher = pattern.matcher(uri);
         if (matcher.find()) {
@@ -26,7 +31,6 @@ public class NetInfUtils {
     }
 
     public static String getAlgorithm(String uri) throws NetInfException {
-        Log.v(TAG, "getAlgorithm()");
         Pattern pattern = Pattern.compile("://.*/(.*?);");
         Matcher matcher = pattern.matcher(uri);
         if (matcher.find()) {
@@ -37,7 +41,6 @@ public class NetInfUtils {
     }
 
     public static String getHash(String uri) throws NetInfException {
-        Log.v(TAG, "getHash()");
         Pattern pattern = Pattern.compile("://.*/.*;(.*?)$");
         Matcher matcher = pattern.matcher(uri);
         if (matcher.find()) {
@@ -47,13 +50,24 @@ public class NetInfUtils {
         }
     }
 
-    public static String newMessageId() {
+    public static String newId() {
         // TODO good enough?
         return RandomStringUtils.randomAlphanumeric(20);
     }
 
+    public static Ndo.Builder toNdoBuilder(String uri) {
+        Pattern pattern = Pattern.compile("://(.*?)/(.*?);(.*?)$");
+        Matcher matcher = pattern.matcher(uri);
+        if (matcher.find()
+                && matcher.groupCount() == 3
+                && !matcher.group(2).equals("")
+                && !matcher.group(3).equals("")) {
+            return new Ndo.Builder(matcher.group(2), matcher.group(3)).authority(matcher.group(1));
+        }
+        throw new IllegalArgumentException(uri + " is not a valid NetInf URI");
+    }
+
     public static Ndo toNdo(JSONObject jo) throws NetInfException {
-        Log.v(TAG, "toNdo()");
 
         // Required
         // Algorithm and hash
@@ -66,12 +80,13 @@ public class NetInfUtils {
 
         String algorithm = getAlgorithm(uri);
         String hash = getHash(uri);
-        Ndo ndo = new Ndo(algorithm, hash);
+
+        Ndo.Builder builder = new Ndo.Builder(algorithm, hash);
 
         // Optional
         // Authority
         try {
-            ndo.setAuthority(getAuthority(uri));
+            builder.authority(getAuthority(uri));
         } catch (NetInfException e) {
             Log.w(TAG, "Failed to parse authority, defaulting to none", e);
         }
@@ -80,7 +95,7 @@ public class NetInfUtils {
             JSONArray locators = jo.getJSONArray("locators");
             for (int i = 0; i < locators.length(); i++) {
                 try {
-                    ndo.addLocator(Locator.fromString(locators.getString(i)));
+                    builder.locator(Locator.fromString(locators.getString(i)));
                 } catch (JSONException e) {
                     Log.w(TAG, "Skipped invalid locator", e);
                 }
@@ -90,15 +105,28 @@ public class NetInfUtils {
         }
         // Metadata
         try {
-            ndo.addMetadata(new Metadata(jo.getJSONObject("ext").getJSONObject("meta")));
+            builder.metadata(new Metadata(jo.getJSONObject("ext").getJSONObject("meta")));
         } catch (JSONException e) {
             Log.w(TAG, "Failed to parse metadata, defaulting to empty");
         }
 
-        Log.d(TAG, ndo.toString());
-        return ndo;
+        return builder.build();
 
     }
+
+    public static String hash(String input, String algorithm) throws NoSuchAlgorithmException {
+        return hash(input.getBytes(), algorithm);
+    }
+
+    public static String hash(File input, String algorithm) throws NoSuchAlgorithmException, IOException {
+        return hash(FileUtils.readFileToByteArray(input), algorithm);
+    }
+
+    public static String hash(byte[] input, String algorithm) throws NoSuchAlgorithmException {
+        byte[] binaryHash = MessageDigest.getInstance(algorithm).digest(input);
+        return Base64.encodeToString(binaryHash, Base64.NO_PADDING | Base64.NO_WRAP | Base64.URL_SAFE);
+    }
+
 
     //    public static JSONObject toJson(Ndo ndo) throws NetInfException {
     //        try {

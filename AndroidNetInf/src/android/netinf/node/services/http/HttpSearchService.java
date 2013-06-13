@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -27,19 +27,19 @@ import org.json.JSONObject;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
-import android.netinf.node.search.Search;
+import android.netinf.messages.Search;
+import android.netinf.messages.SearchResponse;
 import android.netinf.node.search.SearchService;
 import android.util.Log;
 
 public class HttpSearchService implements SearchService {
 
-    public static final String TAG = "HttpSearchService";
+    public static final String TAG = HttpSearchService.class.getSimpleName();
 
     public static final int TIMEOUT = 1000;
 
     @Override
-    public void search(Search search) {
-        Log.v(TAG, "search()");
+    public SearchResponse perform(Search search) {
         Log.i(TAG, "HTTP CL received SEARCH: " + search);
 
         // HTTP Client
@@ -48,13 +48,13 @@ public class HttpSearchService implements SearchService {
         HttpConnectionParams.setSoTimeout(params, TIMEOUT);
         HttpClient client = new DefaultHttpClient(params);
 
-        Set<Ndo> ndos = new LinkedHashSet<Ndo>();
+        Set<Ndo> results = new LinkedHashSet<Ndo>();
         for (String peer : HttpCommon.PEERS) {
             try {
                 HttpResponse response = client.execute(createSearch(peer, search));
                 int status = response.getStatusLine().getStatusCode();
                 if (status == HttpStatus.SC_OK) {
-                    ndos.addAll(parse(response));
+                    results.addAll(parse(response));
                 } else {
                     Log.e(TAG, "SEARCH to " + peer + " failed: " + status);
                 }
@@ -68,12 +68,12 @@ public class HttpSearchService implements SearchService {
                 Log.e(TAG, "SEARCH to " + peer + " failed", e);
             }
         }
-        search.submitResults(ndos);
+
+        return new SearchResponse.Builder(search).addResults(results).build();
 
     }
 
     private HttpPost createSearch(String peer, Search search) throws UnsupportedEncodingException {
-        Log.v(TAG, "createSearch()");
 
         HttpPost post = new HttpPost(peer + "/netinfproto/search");
         post.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -92,7 +92,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private String createTokens(Set<String> tokens) {
-        Log.v(TAG, "createTokens()");
         StringBuilder builder = new StringBuilder();
         for (String token : tokens) {
             builder.append(token);
@@ -102,7 +101,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private Set<Ndo> parse(HttpResponse response) throws NetInfException {
-        Log.v(TAG, "parse()");
 
         Set<Ndo> ndos = new LinkedHashSet<Ndo>();
 
@@ -129,8 +127,7 @@ public class HttpSearchService implements SearchService {
                 String hash = getHash(result);
                 String metadata = getMetadata(result);
 
-                Ndo ndo = new Ndo(algorithm, hash);
-                ndo.addMetadata(new Metadata(metadata));
+                Ndo ndo = new Ndo.Builder(algorithm, hash).metadata(new Metadata(metadata)).build();
                 ndos.add(ndo);
 
             } catch (JSONException e) {
@@ -142,7 +139,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private String getAlgorithm(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getAlgorithm()");
         String ni = jo.getString("ni");
         Pattern pattern = Pattern.compile("/(.*?);");
         Matcher matcher = pattern.matcher(ni);
@@ -154,7 +150,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private String getHash(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getHash()");
         String ni = jo.getString("ni");
         Pattern pattern = Pattern.compile(";(.*?)$");
         Matcher matcher = pattern.matcher(ni);
@@ -166,7 +161,6 @@ public class HttpSearchService implements SearchService {
     }
 
     private String getMetadata(JSONObject jo) throws JSONException {
-        Log.v(TAG, "getMetadata()");
         String metadata = jo.getString("metadata");
         return metadata.toString();
     }

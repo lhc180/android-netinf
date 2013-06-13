@@ -3,6 +3,7 @@ package android.netinf.node.services.rest;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
@@ -14,19 +15,18 @@ import android.netinf.common.Locator;
 import android.netinf.common.Metadata;
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfException;
-import android.netinf.common.NetInfStatus;
-import android.netinf.common.NetInfUtils;
-import android.netinf.node.publish.Publish;
+import android.netinf.messages.Publish;
+import android.netinf.messages.PublishResponse;
+import android.netinf.node.Node;
 import android.util.Log;
 
 public class RestPublishResource extends ServerResource {
 
-    public static final String TAG = "RestPublishResource";
+    public static final String TAG = RestPublishResource.class.getSimpleName();
 
     @Post
     @Put
     public Representation handlePublish() {
-        Log.v(TAG, "handlePublish()");
 
         // Extract
         Map<String, String> query = getQuery().getValuesMap();
@@ -44,46 +44,56 @@ public class RestPublishResource extends ServerResource {
         // Create NDO
         String algorithm = query.get(RestCommon.ALGORITHM);
         String hash = query.get(RestCommon.HASH);
-        Ndo ndo = new Ndo(algorithm, hash);
+        Ndo.Builder ndoBuilder = new Ndo.Builder(algorithm, hash);
 
         // Add Bluetooth
         if (query.containsKey(RestCommon.BLUETOOTH)) {
-            ndo.addLocator(Locator.fromBluetooth(query.get(RestCommon.BLUETOOTH)));
+            ndoBuilder.locator(Locator.fromBluetooth(query.get(RestCommon.BLUETOOTH)));
         }
 
         // Add Metadata
         if (query.containsKey(RestCommon.META)) {
             try {
-                ndo.addMetadata(new Metadata(query.get(RestCommon.META)));
+                ndoBuilder.metadata(new Metadata(query.get(RestCommon.META)));
             } catch (NetInfException e) {
                 Log.w(TAG, "Tried to add invalid JSON as metadata", e);
             }
         }
+        Ndo ndo = ndoBuilder.build();
+
 
         // Create Publish
-        Publish publish = new Publish(RestApi.getInstance(), NetInfUtils.newMessageId(), ndo);
+        Publish.Builder publishBuilder = new Publish.Builder(RestApi.getInstance(), ndo);
 
         // Full Put
         if (query.containsKey(RestCommon.PATH)) {
             try {
-                ndo.setOctets(new File(query.get(RestCommon.PATH)));
-                publish.setFullPut(true);
+                ndo.cache(new File(query.get(RestCommon.PATH)));
+                publishBuilder.fullPut();
             } catch (IOException e) {
                 Log.e(TAG, "Failed to set NDO octets", e);
             }
         }
 
-        Log.i(TAG, "REST API received PUBLISH: " + publish);
+        Log.i(TAG, "REST API received PUBLISH: " + publishBuilder);
 
         // Publish
-        publish.execute();
-        NetInfStatus status = publish.getResult();
-        if (status != NetInfStatus.OK) {
-            setStatus(Status.SERVER_ERROR_INTERNAL);
-            return null;
+        try {
+            Publish publish = publishBuilder.build();
+            PublishResponse response = Node.submit(publish).get();
+
+            if (response.getStatus().isSuccess()) {
+                setStatus(Status.SUCCESS_CREATED);
+                return null;
+            }
+
+        } catch (InterruptedException e) {
+            Log.e(TAG, "PUBLISH failed", e);
+        } catch (ExecutionException e) {
+            Log.e(TAG, "PUBLISH failed", e);
         }
 
-        setStatus(Status.SUCCESS_CREATED);
+        setStatus(Status.SERVER_ERROR_INTERNAL);
         return null;
 
     }

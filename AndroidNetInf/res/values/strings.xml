@@ -16,5 +16,8 @@
     <string name="bluetooth_summary_off">Does not send files using Bluetooth</string>
     <string name="database_category">Database</string>
     <string name="clear_database_title">Clear</string>
-
+    
+    <string name="activity_label_settings">Settings</string>
+    
+    
 </resources>
