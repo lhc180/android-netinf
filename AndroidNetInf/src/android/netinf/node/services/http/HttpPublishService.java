@@ -65,7 +65,8 @@ public class HttpPublishService implements PublishService {
             }
         }
 
-        return new PublishResponse(publish, status);
+        return new PublishResponse.Builder(publish).status(status).build();
+
     }
 
     private HttpPost createPublish(String peer, Publish publish) throws UnsupportedEncodingException {

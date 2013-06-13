@@ -5,7 +5,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
@@ -27,6 +27,9 @@ import android.util.Log;
 public class BluetoothCommon {
 
     public static final String TAG = BluetoothCommon.class.getSimpleName();
+
+    public static final long TIMEOUT = 10000;
+    public static final TimeUnit TIMEOUT_UNIT = TimeUnit.MILLISECONDS;
 
 //    private static ExecutorService mConnectExecutor = Executors.newCachedThreadPool();
 
@@ -88,32 +91,32 @@ public class BluetoothCommon {
 
     }
 
-    // http://stackoverflow.com/questions/14834318/android-how-to-pair-bluetooth-devices-programmatically
-    private static void removeBond(BluetoothDevice device) {
-        try {
-            Log.d(TAG, "Start Un-Pairing...");
-//            Method m = device.getClass().getMethod("removeBond", (Class[]) null);
-//            m.invoke(device, (Object[]) null);
-            Method m = device.getClass().getMethod("removeBond", new Class[] {});
-            m.invoke(device, new Object[] {});
-            Log.d(TAG, "Un-Pairing finished.");
-        } catch (Exception e) {
-            Log.wtf(TAG, e.getMessage());
-        }
-    }
-
-    //http://stackoverflow.com/questions/13767972/android-bluetooth-ibluetooth-createbond-not-found-in-4-2-1-but-works-in-earlie
-    public static boolean createBond(BluetoothDevice btDevice) {
-        try {
-            Class class1 = Class.forName("android.bluetooth.BluetoothDevice");
-            Method createBondMethod = class1.getMethod("createBond");
-            Boolean returnValue = (Boolean) createBondMethod.invoke(btDevice);
-            return returnValue.booleanValue();
-        } catch (Exception e) {
-            Log.wtf(TAG, e.getMessage());
-            return false;
-        }
-    }
+//    // http://stackoverflow.com/questions/14834318/android-how-to-pair-bluetooth-devices-programmatically
+//    private static void removeBond(BluetoothDevice device) {
+//        try {
+//            Log.d(TAG, "Start Un-Pairing...");
+////            Method m = device.getClass().getMethod("removeBond", (Class[]) null);
+////            m.invoke(device, (Object[]) null);
+//            Method m = device.getClass().getMethod("removeBond", new Class[] {});
+//            m.invoke(device, new Object[] {});
+//            Log.d(TAG, "Un-Pairing finished.");
+//        } catch (Exception e) {
+//            Log.wtf(TAG, e.getMessage());
+//        }
+//    }
+//
+//    //http://stackoverflow.com/questions/13767972/android-bluetooth-ibluetooth-createbond-not-found-in-4-2-1-but-works-in-earlie
+//    public static boolean createBond(BluetoothDevice btDevice) {
+//        try {
+//            Class class1 = Class.forName("android.bluetooth.BluetoothDevice");
+//            Method createBondMethod = class1.getMethod("createBond");
+//            Boolean returnValue = (Boolean) createBondMethod.invoke(btDevice);
+//            return returnValue.booleanValue();
+//        } catch (Exception e) {
+//            Log.wtf(TAG, e.getMessage());
+//            return false;
+//        }
+//    }
 
     public static BluetoothSocket connect(BluetoothDevice device) throws IOException {
 
@@ -123,9 +126,7 @@ public class BluetoothCommon {
         BluetoothSocket socket = null;
         try {
             // Connect to remote device
-            Log.d(TAG, "createRfcommSocketToServiceRecord");
             socket = device.createRfcommSocketToServiceRecord(BluetoothApi.NETINF_UUID);
-            Log.d(TAG, "after createRfcommSocketToServiceRecord");
 //            final BluetoothSocket finalSocket = socket; // Inner class requires a final variable
             adapter.cancelDiscovery();
 //            failedTimer.schedule(new TimerTask() {
@@ -136,19 +137,17 @@ public class BluetoothCommon {
 ////                    BluetoothUtils.restartBluetooth(false);
 //                }
 //            }, 5000);
-            Log.d(TAG, "connect");
             socket.connect();
-            Log.d(TAG, "after connect");
 //            failedTimer.cancel();
         } catch (IOException e) {
 //            failedTimer.cancel();
             IOUtils.closeQuietly(socket); // Shouldn't be necessary, but who knows?
             // Sometimes Android 4.2.X fails and BluetoothSocket.connect() start to always throw
             // java.io.IOException: read failed, socket might closed, read ret: -1
-            // Workaround is to unpair/pair, ugly hack does it without consent
-//            if (e.getMessage() != null && e.getMessage().equals("read failed, socket might closed, read ret: -1")) {
-//                restartBluetooth(false);
-//            }
+            if (e.getMessage() != null && e.getMessage().equals("read failed, socket might closed, read ret: -1")) {
+                Log.e(TAG, "Bluetooth bug encountered while connecting, restart required", e);
+                restartBluetooth(false);
+            }
             throw new IOException(adapter.getName() + " failed to connect to " + device.getName(), e);
         }
 
@@ -287,66 +286,96 @@ public class BluetoothCommon {
 //
 //    }
 
-    public static void readConfirmation(DataInputStream bluetoothIn) throws IOException {
-        Log.v(TAG, "readEos()");
-//        try {
-//            Log.d(TAG, "Reading until 'EOS'...");
-//            int b = 0;
-//            do {
-//                b = bluetoothIn.readInt();
-//                // Log.d(TAG, "(Debug) b = " + b);
-//            } while (b != -1);
-//            Log.d(TAG, "Read 'EOS'!");
-//        } catch (Throwable e) {
-//            Log.e(TAG, "Failed to read 'EOS'", e);
+//    public static void readConfirmation(DataInputStream bluetoothIn) throws IOException {
+//        Log.v(TAG, "readEos()");
+////        try {
+////            Log.d(TAG, "Reading until 'EOS'...");
+////            int b = 0;
+////            do {
+////                b = bluetoothIn.readInt();
+////                // Log.d(TAG, "(Debug) b = " + b);
+////            } while (b != -1);
+////            Log.d(TAG, "Read 'EOS'!");
+////        } catch (Throwable e) {
+////            Log.e(TAG, "Failed to read 'EOS'", e);
+////        }
+//        bluetoothIn.readInt();
+//    }
+
+//    public static void writeConfirmation(DataOutputStream bluetoothOut) throws IOException {
+//        Log.v(TAG, "writeEos()");
+////        Log.d(TAG, "Wrote 'EOS'");
+////        bluetoothOut.writeInt(-1);
+//        bluetoothOut.writeInt(0);
+//    }
+
+
+
+//    public static void write(JSONObject jo, DataOutputStream bluetoothOut) throws IOException {
+//        Log.v(TAG, "write(JSONObject)");
+//        Log.d(TAG, "Wrote: " + jo.toString());
+//        byte[] buffer = jo.toString().getBytes("UTF-8");
+//        bluetoothOut.writeInt(buffer.length);
+//        bluetoothOut.write(buffer);
+//    }
+//
+//    public static void write(File file, DataOutputStream bluetoothOut) throws IOException {
+//        Log.v(TAG, "write(File)");
+//        long length = file.length();
+//        if (length > Integer.MAX_VALUE) {
+//            throw new IOException("Failed to write file. File too long.");
 //        }
-        bluetoothIn.readInt();
-    }
+//        bluetoothOut.writeInt((int) length);
+//        IOUtils.copy(new FileInputStream(file), bluetoothOut);
+//    }
 
-    public static void writeConfirmation(DataOutputStream bluetoothOut) throws IOException {
-        Log.v(TAG, "writeEos()");
-//        Log.d(TAG, "Wrote 'EOS'");
-//        bluetoothOut.writeInt(-1);
-        bluetoothOut.writeInt(0);
-    }
-
-    public static void write(JSONObject jo, DataOutputStream bluetoothOut) throws IOException {
-        Log.v(TAG, "write(JSONObject)");
-        Log.d(TAG, "Wrote: " + jo.toString());
-        byte[] buffer = jo.toString().getBytes("UTF-8");
-        bluetoothOut.writeInt(buffer.length);
-        bluetoothOut.write(buffer);
-    }
-
-    public static void write(File file, DataOutputStream bluetoothOut) throws IOException {
-        Log.v(TAG, "write(File)");
-        long length = file.length();
-        if (length > Integer.MAX_VALUE) {
-            throw new IOException("Failed to write file. File too long.");
+    public static void write(JSONObject jo, BluetoothSocket socket) throws IOException {
+        synchronized (socket) {
+//            Log.v(TAG, "write(JSON)");
+            byte[] buffer = jo.toString().getBytes("UTF-8");
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            out.writeInt(buffer.length);
+            out.write(buffer);
+            Log.d(TAG, "Wrote JSON " + buffer.length + " bytes: " + jo.toString());
         }
-        bluetoothOut.writeInt((int) length);
-        IOUtils.copy(new FileInputStream(file), bluetoothOut);
     }
 
-    private static byte[] read(DataInputStream in) throws IOException {
-        Log.v(TAG, "read()");
+    public static void write(JSONObject jo, File file, BluetoothSocket socket) throws IOException {
+        synchronized (socket) {
+//            Log.v(TAG, "write(JSON+File)");
+            write(jo, socket);
+//            Log.v(TAG, "write(File)");
+            long length = file.length();
+            if (length > Integer.MAX_VALUE) {
+                throw new IOException("Failed to write file. File too long.");
+            }
+            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            out.writeInt((int) length);
+            IOUtils.copy(new FileInputStream(file), out);
+            Log.d(TAG, "Wrote file " + length + " bytes");
+        }
+    }
+
+    private static byte[] read(BluetoothSocket socket) throws IOException {
+//        Log.v(TAG, "read()");
         // Read appropriate part from the Bluetooth stream
+        DataInputStream in = new DataInputStream(socket.getInputStream());
         int length = in.readInt();
         byte[] buffer = new byte[length];
 
         int offset = 0;
         while (offset < length) {
             offset += in.read(buffer, offset, length - offset);
-            Log.d(TAG, "(Debug) Transfered " + offset + "/" + length + " bytes");
+            Log.d(TAG, "Read " + offset + "/" + length + " bytes");
         }
 
         return buffer;
     }
 
-    public static JSONObject readJson(DataInputStream in) throws IOException {
-        Log.v(TAG, "readJson()");
+    public static JSONObject readJson(BluetoothSocket socket) throws IOException {
+//        Log.v(TAG, "readJson()");
         try {
-            byte[] buffer = read(in);
+            byte[] buffer = read(socket);
             String json = new String(buffer, "UTF-8");
             Log.d(TAG, "Read: " + new JSONObject(json).toString());
             return new JSONObject(json);
@@ -355,10 +384,10 @@ public class BluetoothCommon {
         }
     }
 
-    public static byte[] readFile(DataInputStream bluetoothIn) throws IOException {
-        Log.v(TAG, "readFile()");
-        // TODO Don't read entire file into memory
-        return read(bluetoothIn);
+    public static byte[] readFile(BluetoothSocket socket) throws IOException {
+//        Log.v(TAG, "readFile()");
+        // TODO Don't read entire file into memory? Or maybe for cut through forwarding
+        return read(socket);
     }
 
     private static String bluetoothStateToString(int state) {

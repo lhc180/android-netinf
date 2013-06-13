@@ -3,20 +3,24 @@ package android.netinf.node.publish;
 import java.util.LinkedList;
 import java.util.List;
 
-import android.netinf.common.ApiToServiceMap;
 import android.netinf.common.NetInfStatus;
 import android.netinf.messages.Publish;
 import android.netinf.messages.PublishResponse;
+import android.netinf.node.api.Api;
 import android.util.Log;
+
+import com.google.common.collect.SetMultimap;
 
 public class PublishController implements PublishService {
 
     public static final String TAG = PublishController.class.getSimpleName();
 
-    private ApiToServiceMap<PublishService> mServices;
+    private SetMultimap<Api, PublishService> mLocalServices;
+    private SetMultimap<Api, PublishService> mRemoteServices;
 
-    public PublishController(ApiToServiceMap<PublishService> services) {
-        mServices = services;
+    public PublishController(SetMultimap<Api, PublishService> local, SetMultimap<Api, PublishService> remote) {
+        mLocalServices = local;
+        mRemoteServices = remote;
     }
 
     @Override
@@ -27,28 +31,28 @@ public class PublishController implements PublishService {
 
         List<PublishResponse> responses = new LinkedList<PublishResponse>();
 
-        // Check local services
-        for (PublishService publishService : mServices.getLocalServices(publish.getSource())) {
+        // Publish to local services
+        for (PublishService publishService : mLocalServices.get(publish.getSource())) {
             responses.add(publishService.perform(publish));
         }
 
-        // Check other services
+        // Publish to remote services
         if (publish.getHopLimit() > 0) {
-            for (PublishService publishService : mServices.getRemoteServices(publish.getSource())) {
+            for (PublishService publishService : mRemoteServices.get(publish.getSource())) {
                 responses.add(publishService.perform(publish));
             }
         }
 
-        // Decide aggregated status
+        // Decide aggregated response status
         for (PublishResponse response : responses) {
             if (response.getStatus().isSuccess()) {
                 Log.i(TAG, "PUBLISH of " + publish + " done. STATUS " + response.getStatus());
-                return new PublishResponse(publish, NetInfStatus.OK);
+                return new PublishResponse.Builder(publish).ok().build();
             }
         }
 
         Log.i(TAG, "PUBLISH of " + publish + " failed. STATUS " + NetInfStatus.FAILED);
-        return new PublishResponse(publish, NetInfStatus.FAILED);
+        return new PublishResponse.Builder(publish).failed().build();
 
     }
 

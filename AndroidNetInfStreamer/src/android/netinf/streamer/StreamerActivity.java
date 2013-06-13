@@ -80,10 +80,10 @@ public class StreamerActivity extends Activity {
                 GetResponse resp3 = f3.get();
                 GetResponse resp4 = f4.get();
                 Log.d(TAG, "---------" + System.currentTimeMillis());
-                Log.d(TAG, "------------" + resp1.getStatus() + " " + (resp1.getStatus().isSuccess() ? resp1.getNdo() : resp1.getRequest().getNdo()));
-                Log.d(TAG, "------------" + resp2.getStatus() + " " + (resp2.getStatus().isSuccess() ? resp2.getNdo() : resp2.getRequest().getNdo()));
-                Log.d(TAG, "------------" + resp3.getStatus() + " " + (resp3.getStatus().isSuccess() ? resp3.getNdo() : resp3.getRequest().getNdo()));
-                Log.d(TAG, "------------" + resp4.getStatus() + " " + (resp4.getStatus().isSuccess() ? resp4.getNdo() : resp4.getRequest().getNdo()));
+                Log.d(TAG, "------------" + resp1.getStatus() + " " + resp1.getNdo());
+                Log.d(TAG, "------------" + resp2.getStatus() + " " + resp2.getNdo());
+                Log.d(TAG, "------------" + resp3.getStatus() + " " + resp3.getNdo());
+                Log.d(TAG, "------------" + resp4.getStatus() + " " + resp4.getNdo());
             } catch (ExecutionException e) {
                 Log.wtf(TAG, "--------get failed", e);
             } catch (InterruptedException e) {
@@ -136,9 +136,11 @@ public class StreamerActivity extends Activity {
         Log.v(TAG, "togglePlay()");
 
         if (mPlayer == null) {
+            Log.d(TAG, "Starting playback...");
             mPlayer = new Player(this);
             mPlayerExecutor.execute(mPlayer);
         } else {
+            Log.d(TAG, "Stopping playback...");
             mPlayer.cancel();
             mPlayer = null;
         }

@@ -16,7 +16,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.netinf.R;
-import android.netinf.common.ApiToServiceMap;
 import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
 import android.netinf.messages.Publish;
@@ -26,7 +25,6 @@ import android.netinf.messages.SearchResponse;
 import android.netinf.node.api.Api;
 import android.netinf.node.get.GetController;
 import android.netinf.node.get.GetService;
-import android.netinf.node.logging.LogCatLogger;
 import android.netinf.node.logging.LogController;
 import android.netinf.node.logging.LogEntry;
 import android.netinf.node.logging.LogService;
@@ -38,7 +36,7 @@ import android.netinf.node.services.bluetooth.BluetoothApi;
 import android.netinf.node.services.bluetooth.BluetoothGet;
 import android.netinf.node.services.bluetooth.BluetoothPublish;
 import android.netinf.node.services.bluetooth.BluetoothSearch;
-import android.netinf.node.services.database.DatabaseService;
+import android.netinf.node.services.database.Database;
 import android.netinf.node.services.http.HttpGetService;
 import android.netinf.node.services.http.HttpPublishService;
 import android.netinf.node.services.http.HttpSearchService;
@@ -46,6 +44,9 @@ import android.netinf.node.services.rest.RestApi;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.SetMultimap;
 
 
 public class Node {
@@ -71,27 +72,36 @@ public class Node {
     }
 
     public static void start(Context context,
-            ApiToServiceMap<PublishService> publishServices,
-            ApiToServiceMap<GetService> getServices,
-            ApiToServiceMap<SearchService> searchServices,
-            List<LogService> logServices) {
+            List<LogService> logServices,
+            SetMultimap<Api, PublishService> localPublishServices,
+            SetMultimap<Api, PublishService> remotePublishServices,
+            SetMultimap<Api, GetService> localGetServices,
+            SetMultimap<Api, GetService> remoteGetServices,
+            SetMultimap<Api, SearchService> localSearchServices,
+            SetMultimap<Api, SearchService> remoteSearchServices) {
+
+        // Load Settings
+        PreferenceManager.setDefaultValues(context, R.xml.preferences, false);
 
         // Setup Node
         Node node = INSTANCE;
         node.mContext = context;
-        node.mPublishController = new PublishController(publishServices);
-        node.mGetController = new GetController(getServices);
-        node.mSearchController = new SearchController(searchServices);
         node.mLogController = new LogController(logServices);
+        node.mPublishController = new PublishController(localPublishServices, remotePublishServices);
+        node.mGetController = new GetController(localGetServices, remoteGetServices);
+        node.mSearchController = new SearchController(localSearchServices, remoteSearchServices);
 
         // Start Logging
         node.mLogController.start();
 
-        // Start API(s)
+        // Start API(s) (and only start each once)
         Set<Api> usedApis = new HashSet<Api>();
-        usedApis.addAll(publishServices.getApis());
-        usedApis.addAll(getServices.getApis());
-        usedApis.addAll(searchServices.getApis());
+        usedApis.addAll(localPublishServices.keySet());
+        usedApis.addAll(remotePublishServices.keySet());
+        usedApis.addAll(localGetServices.keySet());
+        usedApis.addAll(remoteGetServices.keySet());
+        usedApis.addAll(localSearchServices.keySet());
+        usedApis.addAll(remoteSearchServices.keySet());
         for (Api api : usedApis) {
             api.start();
         }
@@ -104,13 +114,13 @@ public class Node {
         // Load Settings
         PreferenceManager.setDefaultValues(context, R.xml.preferences, false);
 
+        // Database
+        Database db                         = new Database(context);
+
         // Create Api(s) and Service(s)
 
         // REST
         RestApi restApi                     = RestApi.getInstance();
-
-        // Database
-        DatabaseService db                  = new DatabaseService(context);
 
         // HTTP CL
         HttpPublishService httpPublish      = new HttpPublishService();
@@ -124,27 +134,35 @@ public class Node {
         BluetoothSearch bluetoothSearch     = new BluetoothSearch(bluetoothApi);
 
         // Link Api(s) to PublishService(s)
-        ApiToServiceMap<PublishService> publishServices = new ApiToServiceMap<PublishService>();
-        publishServices.addLocalService(Api.JAVA, db);
+        SetMultimap<Api, PublishService> localPublishServices = HashMultimap.create();
+        localPublishServices.put(Api.JAVA, db);
+        localPublishServices.put(bluetoothApi, db);
+        SetMultimap<Api, PublishService> remotePublishServices = HashMultimap.create();
 
         // Link Api(s) to GetService(s)
-        ApiToServiceMap<GetService> getServices = new ApiToServiceMap<GetService>();
-        getServices.addLocalService(Api.JAVA, db);
-        getServices.addLocalService(bluetoothApi, db);
-        getServices.addRemoteService(Api.JAVA, bluetoothGet);
-        getServices.addRemoteService(bluetoothApi, bluetoothGet);
+        SetMultimap<Api, GetService> localGetServices = HashMultimap.create();
+        localGetServices.put(Api.JAVA, db);
+        localGetServices.put(bluetoothApi, db);
+        SetMultimap<Api, GetService> remoteGetServices = HashMultimap.create();
+        remoteGetServices.put(Api.JAVA, bluetoothGet);
+        remoteGetServices.put(bluetoothApi, bluetoothGet);
 
         // Link Api(s) to SearchService(s)
-        ApiToServiceMap<SearchService> searchServices = new ApiToServiceMap<SearchService>();
-        searchServices.addLocalService(Api.JAVA, db);
+        SetMultimap<Api, SearchService> localSearchServices = HashMultimap.create();
+        localSearchServices.put(Api.JAVA, db);
+        localSearchServices.put(bluetoothApi, db);
+        SetMultimap<Api, SearchService> remoteSearchServices = HashMultimap.create();
 
         // LogService(s)
         List<LogService> logServices = new LinkedList<LogService>();
-        logServices.add(new LogCatLogger());
+        // logServices.add(new LogCatLogger());
         // logServices.add(new VisualizationService());
 
         // Start Node
-        start(context, publishServices, getServices, searchServices, logServices);
+        start(context, logServices,
+                localPublishServices, remotePublishServices,
+                localGetServices, remoteGetServices,
+                localSearchServices, remoteSearchServices);
 
     }
 
@@ -162,7 +180,7 @@ public class Node {
         // TODO proper implementation
         // Context.deleteDatabase() does not seem to remove the database until the app is restarted
         // http://code.google.com/p/android/issues/detail?id=13727
-        new DatabaseService(INSTANCE.mContext).clearDatabase();
+        new Database(INSTANCE.mContext).clearDatabase();
 
         File cache = new File(Environment.getExternalStorageDirectory(), "shared");
         boolean cacheDeleted = FileUtils.deleteQuietly(cache);
@@ -190,18 +208,7 @@ public class Node {
     }
 
     public static Future<GetResponse> submit(final Get get) {
-        Log.i(TAG, "GET submitted for execution: " + get);
-
-        // Wrap the Get in a Callable
-        Callable<GetResponse> task = new Callable<GetResponse>() {
-            @Override
-            public GetResponse call() {
-                return INSTANCE.mGetController.perform(get);
-            }
-        };
-
-        // Submit the Callable to the Node's ExecutorService
-        return INSTANCE.mRequestExecutor.submit(task);
+        return INSTANCE.mGetController.submit(get);
     }
 
     public static Future<SearchResponse> submit(final Search search) {

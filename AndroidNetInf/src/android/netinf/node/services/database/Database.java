@@ -12,7 +12,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.netinf.common.Ndo;
-import android.netinf.common.NetInfStatus;
 import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
 import android.netinf.messages.Publish;
@@ -24,9 +23,9 @@ import android.netinf.node.publish.PublishService;
 import android.netinf.node.search.SearchService;
 import android.util.Log;
 
-public class DatabaseService extends SQLiteOpenHelper implements PublishService, GetService, SearchService {
+public class Database extends SQLiteOpenHelper implements PublishService, GetService, SearchService {
 
-    public static final String TAG = DatabaseService.class.getSimpleName();
+    public static final String TAG = Database.class.getSimpleName();
 
     public static final String DATABASE_NAME = "NdoDatabase.db3";
     private static final int DATABASE_VERSION = 1;
@@ -41,12 +40,12 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
     private static final String COLUMN_HASH = "hash";
     private static final String COLUMN_NDO = "ndo";
 
-    public DatabaseService(Context context) {
+    public Database(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
-    public PublishResponse perform(Publish publish) {
+    public synchronized PublishResponse perform(Publish publish) {
 
         Log.i(TAG, "Database received PUBLISH: " + publish);
         Ndo ndo = publish.getNdo();
@@ -63,24 +62,24 @@ public class DatabaseService extends SQLiteOpenHelper implements PublishService,
         //    Log.i(TAG,"NDO already in database");
         //}
         Log.i(TAG, "PUBLISH to database succeeded");
-        return new PublishResponse(publish, NetInfStatus.OK); // TODO check if actually inserted
+        return new PublishResponse.Builder(publish).ok().build(); // TODO check if actually inserted
 
     }
 
     @Override
-    public GetResponse perform(Get get) {
+    public synchronized GetResponse perform(Get get) {
         Log.i(TAG, "Database received GET: " + get);
         byte[] blob = getBlob(get.getNdo());
         Ndo ndo = null;
         if (blob != null ) {
             ndo = (Ndo) SerializationUtils.deserialize(blob);
-            return new GetResponse(get, NetInfStatus.OK, ndo);
+            return new GetResponse.Builder(get).ok(get).build();
         }
-        return new GetResponse(get, NetInfStatus.FAILED);
+        return new GetResponse.Builder(get).failed().build();
     }
 
     @Override
-    public SearchResponse perform(Search search) {
+    public synchronized SearchResponse perform(Search search) {
         Log.i(TAG, "Database received SEARCH: " + search);
         String[] columns = {COLUMN_NDO};
         SQLiteDatabase db = getReadableDatabase();

@@ -24,11 +24,12 @@ public class Player implements Runnable {
     public static final int SLEEP = 500;
     public static final int TIMEOUT = 1000;
     public static final int ATTEMPTS = 5;
-    public static final int BUFFER = 5;
+    public static final int BUFFER = 3;
     public static final File VIDEO_FILE = new File(Environment.getExternalStorageDirectory(), "video.h264");
 
     private Context mContext;
     private FileOutputStream mVideo;
+    private boolean mRunning = true;
 
     public Player(Context context) {
         mContext = context;
@@ -51,7 +52,8 @@ public class Player implements Runnable {
 
             // Get chunks (chunk 0 is needed, contains header)
             getChunk(0);
-            while(!Thread.currentThread().isInterrupted()) {
+            while(mRunning) {
+                Log.d(TAG, "interrupted = " + Thread.currentThread().isInterrupted());
                 if(current - start == BUFFER) {
                     play();
                 }
@@ -121,7 +123,7 @@ public class Player implements Runnable {
     }
 
     public void cancel() {
-        Thread.currentThread().interrupt();
+        mRunning = false;
     }
 
 //    File file = null;

@@ -61,6 +61,9 @@ public class Encoder implements Runnable {
     private int mChunkSize = 0;
     /** Publisher to call when chunk done. */
     private Publisher mPublisher;
+    /** How often to duplicate frames to go from 15 -> 25 fps. */
+    // inc and mod 3, 0 indicates frame should not be duplicated, 3 frames becomes 5
+    private int mDuplicate = 0;
 
     public Encoder() {
 
@@ -84,7 +87,8 @@ public class Encoder implements Runnable {
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 125000);
         // FRAME_RATE is in reality 30, 15 tricks the encoder to insert more IDR-frames, for smaller min chunks
         // I_FRAME_INTERVAL is 1/s but since FRAME_RATE is wrong we get double the amount, 2/s
-        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 15);
+        // mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 15);
+        mediaFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 30);
         // mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar);
         // mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYCrYCb);
         mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_TI_FormatYUV420PackedSemiPlanar);
@@ -115,13 +119,17 @@ public class Encoder implements Runnable {
     }
 
     // called from Camera.setPreviewCallbackWithBuffer(...) in other class
+
     @SuppressWarnings("unchecked")
     public void queueForEncoding(byte[] frame) {
         // Log.v(TAG, "queueForEncoding()");
         // Fake 30 fps by encoding every frame twice
         frame = YV12toYUV420PackedSemiPlanar(frame, 320, 240);
         mFrameFifo.add(frame);
-        mFrameFifo.add(frame);
+        if (mDuplicate != 0) {
+            mFrameFifo.add(frame);
+        }
+        mDuplicate = (mDuplicate + 1) % 3;
         if (mFrameFifo.size() > 30) {
             Log.w(TAG, "More than 30 uncoded frames in queue, encoder is lagging behind!");
         }
