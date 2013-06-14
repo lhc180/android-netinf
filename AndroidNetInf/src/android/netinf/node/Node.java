@@ -144,6 +144,7 @@ public class Node {
         SetMultimap<Api, GetService> localGetServices = HashMultimap.create();
         localGetServices.put(Api.JAVA, db);
         localGetServices.put(bluetoothApi, db);
+        localGetServices.put(Api.JAVA, httpGet);
         SetMultimap<Api, GetService> remoteGetServices = HashMultimap.create();
         remoteGetServices.put(Api.JAVA, bluetoothGet);
         remoteGetServices.put(bluetoothApi, bluetoothGet);
@@ -194,7 +195,7 @@ public class Node {
     }
 
     public static Future<PublishResponse> submit(final Publish publish) {
-        Log.i(TAG, "PUBLISH submitted for execution: " + publish);
+        Log.i(TAG, "NEW PUBLISH " + publish);
 
         // Wrap the Publish in a Callable
         Callable<PublishResponse> task = new Callable<PublishResponse>() {
@@ -213,7 +214,7 @@ public class Node {
     }
 
     public static Future<SearchResponse> submit(final Search search) {
-        Log.i(TAG, "GET submitted for execution: " + search);
+        Log.i(TAG, "NEW SEARCH " + search);
 
         // Wrap the Search in a Callable
         Callable<SearchResponse> task = new Callable<SearchResponse>() {

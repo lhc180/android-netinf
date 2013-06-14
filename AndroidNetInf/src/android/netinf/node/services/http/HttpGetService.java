@@ -47,7 +47,7 @@ public class HttpGetService implements GetService {
 
     @Override
     public GetResponse perform(Get get) {
-        Log.i(TAG, "HTTP CL received GET: " + get);
+        Log.i(TAG, "HTTP GET " + get);
 
         // HTTP Client
         HttpParams params = new BasicHttpParams();
@@ -123,7 +123,7 @@ public class HttpGetService implements GetService {
         // Result NDO
         Ndo.Builder builder = new Ndo.Builder(get.getNdo());
 
-        // Locators (required, locator response without locators not useful)
+        // Locators (required, locator response without locators not useful?)
         try {
             builder.locators(getLocators(jo));
         } catch (JSONException e) {
@@ -137,7 +137,9 @@ public class HttpGetService implements GetService {
             Log.w(TAG, "Failed to parse metadata", e);
         }
 
-        return new GetResponse.Builder(get).ok(get).build();
+        Ndo ndo = builder.build();
+
+        return new GetResponse.Builder(get).ok(ndo).build();
     }
 
     private GetResponse parseBinaryResponse(Get get, HttpResponse response) throws NetInfException {

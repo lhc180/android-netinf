@@ -3,7 +3,6 @@ package android.netinf.node.services.http;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -31,7 +30,7 @@ public class HttpPublishService implements PublishService {
 
     @Override
     public PublishResponse perform(Publish publish) {
-        Log.i(TAG, "HTTP CL received PUBLISH: " + publish);
+        Log.i(TAG, "HTTP PUBLISH " + publish);
 
         // HTTP Client
         HttpParams params = new BasicHttpParams();
@@ -44,7 +43,7 @@ public class HttpPublishService implements PublishService {
         for (String peer : HttpCommon.getPeers()) {
             try {
                 HttpResponse response = client.execute(createPublish(peer, publish));
-                Log.d(TAG, IOUtils.toString(response.getEntity().getContent()));
+                // Log.d(TAG, IOUtils.toString(response.getEntity().getContent()));
                 int code = response.getStatusLine().getStatusCode();
                 // NiProxy returns 200, Erlang returns 201
                 if (code == HttpStatus.SC_CREATED || code == HttpStatus.SC_OK) {

@@ -47,7 +47,7 @@ public class Database extends SQLiteOpenHelper implements PublishService, GetSer
     @Override
     public synchronized PublishResponse perform(Publish publish) {
 
-        Log.i(TAG, "Database received PUBLISH: " + publish);
+        Log.i(TAG, "Database PUBLISH " + publish);
         Ndo ndo = publish.getNdo();
         // TODO Don't just overwrite
         if (contains(ndo)) {
@@ -68,7 +68,7 @@ public class Database extends SQLiteOpenHelper implements PublishService, GetSer
 
     @Override
     public synchronized GetResponse perform(Get get) {
-        Log.i(TAG, "Database received GET: " + get);
+        Log.i(TAG, "Database GET " + get);
         byte[] blob = getBlob(get.getNdo());
         Ndo ndo = null;
         if (blob != null ) {
@@ -80,7 +80,7 @@ public class Database extends SQLiteOpenHelper implements PublishService, GetSer
 
     @Override
     public synchronized SearchResponse perform(Search search) {
-        Log.i(TAG, "Database received SEARCH: " + search);
+        Log.i(TAG, "Database SEARCH " + search);
         String[] columns = {COLUMN_NDO};
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_NDO, columns, null, null, null, null, null);

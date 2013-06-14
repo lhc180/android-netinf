@@ -27,7 +27,7 @@ public class BluetoothSearch implements SearchService {
 
     @Override
     public SearchResponse perform(Search search) {
-        Log.i(TAG, "Bluetooth CL received SEARCH: " + search);
+        Log.i(TAG, "Bluetooth SEARCH " + search);
 
         // Create JSON representation of Search
         JSONObject jo = null;

@@ -1,5 +1,7 @@
 package android.netinf.messages;
 
+import org.apache.commons.lang3.StringUtils;
+
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 
@@ -43,7 +45,7 @@ public class GetResponse extends Response {
 
     @Override
     public String toString() {
-        return "{id = " + mId + " , status = " + mStatus + ", ndo = " + mNdo + "}";
+        return "{id=" + StringUtils.left(mId, 3) + "…, status=" + mStatus + ", ndo=" + mNdo + "}";
     }
 
 }

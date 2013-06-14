@@ -30,7 +30,7 @@ public class BluetoothGet implements GetService {
 
     @Override
     public GetResponse perform(Get get) {
-        Log.i(TAG, "Bluetooth CL received GET: " + get);
+        Log.i(TAG, "Bluetooth GET " + get);
 
         // Check if Bluetooth is available, could be restarting
         if (!BluetoothCommon.isBluetoothAvailable()) {

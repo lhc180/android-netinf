@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfStatus;
 
@@ -37,6 +39,11 @@ public class SearchResponse extends Response {
 
     public Set<Ndo> getResults() {
         return mResults;
+    }
+
+    @Override
+    public String toString() {
+        return "{id=" + StringUtils.left(mId, 3) + "…, status=" + mStatus + ", results=" + mResults + "}";
     }
 
 }

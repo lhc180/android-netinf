@@ -40,7 +40,7 @@ public class HttpSearchService implements SearchService {
 
     @Override
     public SearchResponse perform(Search search) {
-        Log.i(TAG, "HTTP CL received SEARCH: " + search);
+        Log.i(TAG, "HTTP SEARCH " + search);
 
         // HTTP Client
         HttpParams params = new BasicHttpParams();

@@ -4,6 +4,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang3.StringUtils;
+
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfUtils;
 import android.netinf.node.Node;
@@ -78,7 +80,7 @@ public class Get extends Request {
 
     @Override
     public String toString() {
-        return "{id = " + mId + ", ndo = " + mNdo.getUri() + "}";
+        return "{id=" + StringUtils.left(mId, 3) + "…, ndo=" + mNdo + "}";
     }
 
 }

@@ -37,7 +37,7 @@ public class GetController {
 
     public Future<GetResponse> submit(final Get get) {
 
-        Log.i(TAG, "GET submitted for execution: " + get);
+        Log.i(TAG, "NEW GET " + get);
         Node.log(LogEntry.newIncoming("UNKNOWN"), get);
 
         SettableFuture<GetResponse> future = mInProgressTracker.newFutureOrNull(get);
@@ -45,14 +45,14 @@ public class GetController {
         if (future == null) {
 
             // Request is in progress
-            Log.d(TAG, "The GET " + get + " is already in progress");
+            Log.d(TAG, "GET " + get + " is already in progress");
             future = SettableFuture.create();
             future.set(new GetResponse.Builder(get).failed().build());
 
         } else if (!mRequestAggregator.aggregate(get)) {
 
             // Request was not aggregates
-            Log.d(TAG, "The GET " + get + " was NOT aggregated");
+            Log.d(TAG, "GET " + get + " was NOT aggregated");
             mGetExecutor.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -61,7 +61,7 @@ public class GetController {
             });
 
         } else {
-            Log.d(TAG, "The GET " + get + " was aggregated");
+            Log.d(TAG, "GET " + get + " was aggregated");
         }
 
         return future;
@@ -96,7 +96,6 @@ public class GetController {
             }
         }
 
-        Log.i(TAG, "GET of " + get + " done. STATUS " + getResponse.getStatus());
         Node.log(LogEntry.newOutgoing("UNKNOWN"), getResponse);
 
         // Get aggregated requests
@@ -109,7 +108,9 @@ public class GetController {
         Map<Get, SettableFuture<GetResponse>> futures = mInProgressTracker.stopFutures(gets);
         for (Get aggregated : futures.keySet()) {
             SettableFuture<GetResponse> future = futures.get(aggregated);
-            future.set(new GetResponse.Builder(getResponse).id(aggregated.getId()).build());
+            GetResponse aggregatedGetResponse = new GetResponse.Builder(getResponse).id(aggregated.getId()).build();
+            Log.i(TAG, "GET " + get + "\n-> " + aggregatedGetResponse);
+            future.set(aggregatedGetResponse);
         }
 
     }

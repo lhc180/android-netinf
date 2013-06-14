@@ -202,27 +202,24 @@ public class Ndo implements Serializable {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(TAG);
-        builder.append("@");
-        builder.append(Integer.toHexString(hashCode()));
-        builder.append(" {");
-        builder.append("auth=");
-        builder.append(mAuthority);
-        builder.append(", alg=");
-        builder.append(mAlgorithm);
-        builder.append(", hash=");
-        builder.append(mHash);
-        builder.append(", locators=");
+        builder.append("{");
+        builder.append("uri=");
+        builder.append(getUri());
+        builder.append(", locs=");
         builder.append(mLocators);
         builder.append(", meta=");
         builder.append(mMetadata);
         builder.append(", cache=");
         if (isCached()) {
-            try {
-                builder.append(mOctets.getCanonicalPath());
-            } catch (IOException e) {
-                builder.append("ERROR");
-            }
+            // try {
+                // builder.append(mOctets.getCanonicalPath());
+                builder.append("{");
+                builder.append(mOctets.length());
+                builder.append(" bytes");
+                builder.append("}");
+            // } catch (IOException e) {
+            //     builder.append("ERROR");
+            // }
         } else {
             builder.append("NOT_CACHED");
         }
