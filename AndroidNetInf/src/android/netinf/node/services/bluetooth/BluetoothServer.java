@@ -35,7 +35,7 @@ public class BluetoothServer implements Runnable {
 
                       Log.i(TAG, adapter.getName() + " waiting for connections...");
                       socket = server.accept();
-                      Log.i(TAG, adapter.getName() + " accepted a connection");
+                      Log.i(TAG, adapter.getName() + " accepted a connection from " + socket.getRemoteDevice().getName());
                       mApi.getManager().addSocket(socket);
                   } catch (IOException e) {
                       Log.e(TAG, "Failed to accept socket", e);

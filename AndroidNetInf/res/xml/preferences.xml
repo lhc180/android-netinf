@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
+    <PreferenceCategory android:title="Bluetooth" >
+        <ListPreference
+            android:defaultValue="Static"
+            android:dialogTitle="Bluetooth Routing"
+            android:entries="@array/routing_alternatives"
+            android:entryValues="@array/routing_alternatives"
+            android:key="pref_key_bluetooth_routing"
+            android:title="Routing" />
+        <EditTextPreference
+            android:defaultValue="TPA-# TPA-#"
+            android:key="pref_key_bluetooth_static_devices"
+            android:title="Static route to" />
+        <EditTextPreference
+            android:defaultValue="10000"
+            android:inputType="numberDecimal"
+            android:key="pref_key_bluetooth_timeout"
+            android:title="Timeout" />
+    </PreferenceCategory>
     <PreferenceCategory android:title="Visualization" >
         <EditTextPreference
             android:defaultValue="213.159.185.166"

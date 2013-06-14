@@ -2,7 +2,6 @@ package android.netinf.node.services.bluetooth;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.json.JSONArray;
@@ -19,8 +18,6 @@ import android.util.Log;
 public class BluetoothSearch implements SearchService {
 
     public static final String TAG = BluetoothSearch.class.getSimpleName();
-
-    public static final long TIMEOUT = 10000;
 
     private BluetoothApi mApi;
 
@@ -53,7 +50,7 @@ public class BluetoothSearch implements SearchService {
                 BluetoothCommon.write(jo, socket);
 
                 // Receive
-                return mApi.getManager().getResponse(search).get(TIMEOUT, TimeUnit.MILLISECONDS);
+                return mApi.getManager().getResponse(search).get(BluetoothCommon.getTimeout(), BluetoothCommon.TIMEOUT_UNIT);
 
             } catch (IOException e) {
                 Log.e(TAG, "SEARCH to " + device.getName() + " failed", e);

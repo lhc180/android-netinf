@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.netinf.node.SettingsActivity;
 import android.util.Log;
 
 // In case you don't want to send length prefixes
@@ -28,13 +29,11 @@ public class BluetoothCommon {
 
     public static final String TAG = BluetoothCommon.class.getSimpleName();
 
-    public static final long TIMEOUT = 10000;
     public static final TimeUnit TIMEOUT_UNIT = TimeUnit.MILLISECONDS;
-
-//    private static ExecutorService mConnectExecutor = Executors.newCachedThreadPool();
 
     // Ugly hack to restart Bluetooth
     private static Boolean mRestartingBluetooth = false;
+
     public static void restartBluetooth(boolean wait) {
 
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
@@ -117,6 +116,10 @@ public class BluetoothCommon {
 //            return false;
 //        }
 //    }
+
+    public static long getTimeout() {
+        return SettingsActivity.getPreferenceAsLong("pref_key_bluetooth_timeout");
+    }
 
     public static BluetoothSocket connect(BluetoothDevice device) throws IOException {
 
@@ -336,7 +339,7 @@ public class BluetoothCommon {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             out.writeInt(buffer.length);
             out.write(buffer);
-            Log.d(TAG, "Wrote JSON " + buffer.length + " bytes: " + jo.toString());
+            Log.d(TAG, "Wrote JSON " + buffer.length + " bytes to " + socket.getRemoteDevice().getName() + ": " + jo.toString());
         }
     }
 
@@ -352,7 +355,7 @@ public class BluetoothCommon {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
             out.writeInt((int) length);
             IOUtils.copy(new FileInputStream(file), out);
-            Log.d(TAG, "Wrote file " + length + " bytes");
+            Log.d(TAG, "Wrote file " + length + " bytes to " + socket.getRemoteDevice().getName());
         }
     }
 
@@ -366,7 +369,7 @@ public class BluetoothCommon {
         int offset = 0;
         while (offset < length) {
             offset += in.read(buffer, offset, length - offset);
-            Log.d(TAG, "Read " + offset + "/" + length + " bytes");
+            Log.d(TAG, "Read " + offset + "/" + length + " bytes from " + socket.getRemoteDevice().getName());
         }
 
         return buffer;
@@ -377,8 +380,9 @@ public class BluetoothCommon {
         try {
             byte[] buffer = read(socket);
             String json = new String(buffer, "UTF-8");
-            Log.d(TAG, "Read: " + new JSONObject(json).toString());
-            return new JSONObject(json);
+            JSONObject jo = new JSONObject(json);
+            Log.d(TAG, "Read " + buffer.length + " bytes from " + socket.getRemoteDevice().getName() + ": " + jo);
+            return jo;
         } catch (JSONException e) {
             throw new IOException("InputStream did not contain valid JSON", e);
         }

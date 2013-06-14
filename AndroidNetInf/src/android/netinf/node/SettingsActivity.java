@@ -18,6 +18,10 @@ public class SettingsActivity extends Activity {
         return Integer.valueOf(getPreference(key));
     }
 
+    public static long getPreferenceAsLong(String key) {
+        return Long.valueOf(getPreference(key));
+    }
+
     public static String getPreference(String key) {
         String value = PreferenceManager.getDefaultSharedPreferences(Node.getContext()).getString(key, null);
         if (value == null) {
@@ -50,13 +54,9 @@ public class SettingsActivity extends Activity {
 
         }
 
-        private void updateSummary(String key) {
-            String value = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(key, "?");
-            findPreference(key).setSummary(value);
-        }
-
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            updateDependencies(key);
             updateSummary(key);
         }
 
@@ -70,6 +70,24 @@ public class SettingsActivity extends Activity {
         public void onPause() {
             super.onPause();
             getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+        }
+
+        private void updateSummary(String key) {
+            String value = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(key, "?");
+            findPreference(key).setSummary(value);
+        }
+
+        private void updateDependencies(String key) {
+
+            // Bluetooth Routing
+            if (key.equals("pref_key_bluetooth_routing")) {
+                if (getPreferenceScreen().getSharedPreferences().getString("pref_key_bluetooth_routing", "").equals("Static")) {
+                    findPreference("pref_key_bluetooth_static_devices").setEnabled(true);
+                } else {
+                    findPreference("pref_key_bluetooth_static_devices").setEnabled(false);
+                }
+            }
+
         }
     }
 

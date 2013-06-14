@@ -3,7 +3,6 @@ package android.netinf.node.services.bluetooth;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.json.JSONException;
@@ -22,8 +21,6 @@ import android.util.Log;
 public class BluetoothGet implements GetService {
 
     public static final String TAG = BluetoothGet.class.getSimpleName();
-
-    public static final long TIMEOUT = 100000;
 
     private BluetoothApi mApi;
 
@@ -67,7 +64,7 @@ public class BluetoothGet implements GetService {
                 Node.log(LogEntry.newOutgoing("Bluetooth"), get);
 
                 // Wait for Response
-                GetResponse response = mApi.getManager().getResponse(get).get(TIMEOUT, TimeUnit.MILLISECONDS);
+                GetResponse response = mApi.getManager().getResponse(get).get(BluetoothCommon.getTimeout(), BluetoothCommon.TIMEOUT_UNIT);
                 Node.log(LogEntry.newIncoming("Bluetooth"), response);
                 if (response.getStatus().isSuccess()) {
                     return response;

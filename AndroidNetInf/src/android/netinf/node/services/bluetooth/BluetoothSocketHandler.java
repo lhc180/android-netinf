@@ -132,7 +132,7 @@ public class BluetoothSocketHandler implements Runnable {
             public void run() {
                 try {
                     // Wait for PublishResponse with timeout
-                    PublishResponse publishResponse = future.get(BluetoothCommon.TIMEOUT, BluetoothCommon.TIMEOUT_UNIT);
+                    PublishResponse publishResponse = future.get(BluetoothCommon.getTimeout(), BluetoothCommon.TIMEOUT_UNIT);
 
                     // Convert PublishResponse into JSON and send it
                     JSONObject responseJo = new JSONObject();
@@ -187,7 +187,7 @@ public class BluetoothSocketHandler implements Runnable {
             public void run() {
                 try {
                     // Wait for GetResponse with timeout
-                    GetResponse getResponse = future.get(BluetoothCommon.TIMEOUT, BluetoothCommon.TIMEOUT_UNIT);
+                    GetResponse getResponse = future.get(BluetoothCommon.getTimeout(), BluetoothCommon.TIMEOUT_UNIT);
 
                     // Convert GetResponse into JSON and send it
                     JSONObject jo = new JSONObject();
@@ -245,7 +245,7 @@ public class BluetoothSocketHandler implements Runnable {
             public void run() {
                 try {
                     // Wait for SearchResponse with timeout
-                    SearchResponse searchResponse = future.get(BluetoothCommon.TIMEOUT, BluetoothCommon.TIMEOUT_UNIT);
+                    SearchResponse searchResponse = future.get(BluetoothCommon.getTimeout(), BluetoothCommon.TIMEOUT_UNIT);
 
                     // Convert SearchResponse into JSON
                     JSONObject responseJo = new JSONObject();
