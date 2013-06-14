@@ -2,7 +2,6 @@ package android.netinf.node.services.bluetooth;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.json.JSONArray;
@@ -22,8 +21,6 @@ import android.util.Log;
 public class BluetoothPublish implements PublishService {
 
     public static final String TAG = BluetoothPublish.class.getSimpleName();
-
-    public static final long TIMEOUT = 10000;
 
     private BluetoothApi mApi;
 
@@ -61,7 +58,7 @@ public class BluetoothPublish implements PublishService {
                     }
 
                     // Receive
-                    PublishResponse response = mApi.getManager().getResponse(publish).get(TIMEOUT, TimeUnit.MILLISECONDS);
+                    PublishResponse response = mApi.getManager().getResponse(publish).get(BluetoothCommon.getTimeout(), BluetoothCommon.TIMEOUT_UNIT);
                     if (response.getStatus().isSuccess()) {
                         status = NetInfStatus.OK;
                         Log.i(TAG, "PUBLISH to " + device.getName() + " succeeded");

@@ -14,6 +14,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.netinf.node.SettingsActivity;
 import android.util.Log;
 
 public class BluetoothDiscovery implements Runnable {
@@ -133,16 +134,41 @@ public class BluetoothDiscovery implements Runnable {
     };
 
     public Set<BluetoothDevice> getBluetoothDevices() {
-        // TODO DEBUG, return bonded devices
-//        for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
-//            Log.d(TAG, "(Debug) Ignoring Bluetooth discovery, returning bonded device(s) instead: " + device.getName());
-//        }
-//        return BluetoothAdapter.getDefaultAdapter().getBondedDevices();
 
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        Set<BluetoothDevice> devices = adapter.getBondedDevices();
+        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>();// = adapter.getBondedDevices();
+
         StringBuilder builder = new StringBuilder();
-        builder.append("Ignoring Bluetooth discovery, returning bonded device(s) instead: [");
+
+        // Filter depending of settings
+        if (SettingsActivity.getPreference("pref_key_bluetooth_routing").equalsIgnoreCase("Static")) {
+            builder.append("Routing Bluetooth to static devices: [");
+            // Peers are stored as simple names separated by space
+            String[] peers = SettingsActivity.getPreference("pref_key_bluetooth_static_devices").split(" ");
+            for (String peer : peers) {
+                // Look for peers in seen devices
+                for (SeenDevice seenDevice : mSeenDevices.values()) {
+                    if (seenDevice.mDevice.getName().equalsIgnoreCase(peer.trim())) {
+                        devices.add(seenDevice.mDevice);
+                    }
+                }
+                // Look for peers in bonded devices
+                for (BluetoothDevice device : adapter.getBondedDevices()) {
+                    if (device.getName().equalsIgnoreCase(peer.trim())) {
+                        devices.add(device);
+                    }
+                }
+            }
+        } else if (SettingsActivity.getPreference("pref_key_bluetooth_routing").equalsIgnoreCase("Bonded")) {
+            builder.append("Routing Bluetooth to bonded devices: [");
+            devices.addAll(adapter.getBondedDevices());
+        } else {
+            builder.append("Routing Bluetooth to all discovered devices: [");
+            for (SeenDevice seenDevice : mSeenDevices.values()) {
+                devices.add(seenDevice.mDevice);
+            }
+        }
+
         for (BluetoothDevice device : devices) {
             builder.append(device.getName());
             builder.append(", ");
@@ -154,15 +180,6 @@ public class BluetoothDiscovery implements Runnable {
         Log.d(TAG, builder.toString());
         return devices;
 
-
-//        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>();
-//        for (SeenDevice seenDevice : mSeenDevices.values()) {
-//            // TODO DEBUG, only return TPA-* devices
-//            if (seenDevice.mDevice.getName().startsWith("TPA-")) {
-//                devices.add(seenDevice.mDevice);
-//            }
-//        }
-//        return devices;
     }
 
 }

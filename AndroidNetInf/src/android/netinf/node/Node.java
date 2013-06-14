@@ -81,7 +81,7 @@ public class Node {
             SetMultimap<Api, SearchService> remoteSearchServices) {
 
         // Load Settings
-        PreferenceManager.setDefaultValues(context, R.xml.preferences, false);
+        PreferenceManager.setDefaultValues(context, R.xml.preferences, true);
 
         // Setup Node
         Node node = INSTANCE;
@@ -112,7 +112,7 @@ public class Node {
     public static void start(Context context) {
 
         // Load Settings
-        PreferenceManager.setDefaultValues(context, R.xml.preferences, false);
+        PreferenceManager.setDefaultValues(context, R.xml.preferences, true);
 
         // Database
         Database db                         = new Database(context);
