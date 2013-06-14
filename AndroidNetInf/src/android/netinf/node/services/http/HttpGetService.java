@@ -56,7 +56,7 @@ public class HttpGetService implements GetService {
         HttpClient client = new DefaultHttpClient(params);
 
         // Repeat GET until ok result
-        for (String peer : HttpCommon.PEERS) {
+        for (String peer : HttpCommon.getPeers()) {
             try {
                 HttpResponse response = client.execute(createGet(peer, get));
                 Node.log(LogEntry.newOutgoing("HTTP"), get);

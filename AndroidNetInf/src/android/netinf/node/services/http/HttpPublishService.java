@@ -29,21 +29,19 @@ public class HttpPublishService implements PublishService {
 
     public static final String TAG = HttpPublishService.class.getSimpleName();
 
-    public static final int TIMEOUT = 2000;
-
     @Override
     public PublishResponse perform(Publish publish) {
         Log.i(TAG, "HTTP CL received PUBLISH: " + publish);
 
         // HTTP Client
         HttpParams params = new BasicHttpParams();
-        HttpConnectionParams.setConnectionTimeout(params, TIMEOUT);
-        HttpConnectionParams.setSoTimeout(params, TIMEOUT);
+        HttpConnectionParams.setConnectionTimeout(params, HttpCommon.getTimeout());
+        HttpConnectionParams.setSoTimeout(params, HttpCommon.getTimeout());
         HttpClient client = new DefaultHttpClient(params);
 
         // Publish to all peers
         NetInfStatus status = NetInfStatus.FAILED;
-        for (String peer : HttpCommon.PEERS) {
+        for (String peer : HttpCommon.getPeers()) {
             try {
                 HttpResponse response = client.execute(createPublish(peer, publish));
                 Log.d(TAG, IOUtils.toString(response.getEntity().getContent()));

@@ -162,11 +162,13 @@ public class BluetoothDiscovery implements Runnable {
         } else if (SettingsActivity.getPreference("pref_key_bluetooth_routing").equalsIgnoreCase("Bonded")) {
             builder.append("Routing Bluetooth to bonded devices: [");
             devices.addAll(adapter.getBondedDevices());
-        } else {
+        } else if (SettingsActivity.getPreference("pref_key_bluetooth_routing").equalsIgnoreCase("All")) {
             builder.append("Routing Bluetooth to all discovered devices: [");
             for (SeenDevice seenDevice : mSeenDevices.values()) {
                 devices.add(seenDevice.mDevice);
             }
+        } else {
+            // "None"
         }
 
         for (BluetoothDevice device : devices) {

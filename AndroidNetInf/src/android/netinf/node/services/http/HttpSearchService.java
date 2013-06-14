@@ -49,7 +49,7 @@ public class HttpSearchService implements SearchService {
         HttpClient client = new DefaultHttpClient(params);
 
         Set<Ndo> results = new LinkedHashSet<Ndo>();
-        for (String peer : HttpCommon.PEERS) {
+        for (String peer : HttpCommon.getPeers()) {
             try {
                 HttpResponse response = client.execute(createSearch(peer, search));
                 int status = response.getStatusLine().getStatusCode();

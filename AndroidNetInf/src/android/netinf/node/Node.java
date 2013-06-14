@@ -137,6 +137,7 @@ public class Node {
         SetMultimap<Api, PublishService> localPublishServices = HashMultimap.create();
         localPublishServices.put(Api.JAVA, db);
         localPublishServices.put(bluetoothApi, db);
+        localPublishServices.put(Api.JAVA, httpPublish);
         SetMultimap<Api, PublishService> remotePublishServices = HashMultimap.create();
 
         // Link Api(s) to GetService(s)

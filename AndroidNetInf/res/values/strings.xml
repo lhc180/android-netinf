@@ -20,6 +20,7 @@
     <string name="activity_label_settings">Settings</string>
     
     <string-array name="routing_alternatives">
+        <item>None</item>
         <item>Static</item>
         <item>Bonded</item>
         <item>All</item>
