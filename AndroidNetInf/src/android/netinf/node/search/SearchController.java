@@ -31,10 +31,9 @@ public class SearchController implements SearchService {
         final Search search = new Search.Builder(incomingSearch).consumeHop().build();
 
         // Get search services to be used
-        Log.i(TAG, "Local SEARCH of " + search);
+        Log.i(TAG, "SEARCH " + search);
         Set<SearchService> searchServices = new LinkedHashSet<SearchService>(mLocalServices.get(search.getSource()));
         if (search.getHopLimit() > 0) {
-            Log.i(TAG, "Remote SEARCH of " + search);
             searchServices.addAll(mRemoteServices.get(search.getSource()));
         }
 
@@ -59,9 +58,9 @@ public class SearchController implements SearchService {
             Log.i(TAG, "SEARCH interrupted");
         }
 
-        SearchResponse response = searchResponseBuilder.build();
-        Log.i(TAG, "SEARCH produced " + response.getResults().size() + " NDO(s)");
-        return response;
+        SearchResponse searchResponse = searchResponseBuilder.build();
+        Log.i(TAG, "SEARCH " + search + "\n-> " + searchResponse);
+        return searchResponse;
 
     }
 

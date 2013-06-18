@@ -42,8 +42,9 @@ public class Ndo implements Serializable {
         }
 
         public Builder authority(String authority) { mAuthority = authority; return this; }
-        public Builder locator(Locator locator) { mLocators.add(locator); return this; }
-        public Builder locators(Set<Locator> locators) { mLocators.addAll(locators); return this; }
+        public Builder addLocator(Locator locator) { mLocators.add(locator); return this; }
+        public Builder addLocators(Set<Locator> locators) { mLocators.addAll(locators); return this; }
+        public Builder setLocators(Set<Locator> locators) { mLocators.clear(); mLocators.addAll(locators); return this; }
         public Builder metadata(Metadata metadata) { mMetadata = metadata; return this; }
         public Builder timestamp(long timestamp) { mTimestamp = timestamp; return this; }
 
@@ -184,7 +185,7 @@ public class Ndo implements Serializable {
     }
 
     public Set<Locator> getLocators() {
-        return mLocators;
+        return new HashSet<Locator>(mLocators);
     }
 
     public Metadata getMetadata() {
@@ -202,27 +203,24 @@ public class Ndo implements Serializable {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(TAG);
-        builder.append("@");
-        builder.append(Integer.toHexString(hashCode()));
-        builder.append(" {");
-        builder.append("auth=");
-        builder.append(mAuthority);
-        builder.append(", alg=");
-        builder.append(mAlgorithm);
-        builder.append(", hash=");
-        builder.append(mHash);
-        builder.append(", locators=");
+        builder.append("{");
+        builder.append("uri=");
+        builder.append(getUri());
+        builder.append(", locs=");
         builder.append(mLocators);
         builder.append(", meta=");
         builder.append(mMetadata);
         builder.append(", cache=");
         if (isCached()) {
-            try {
-                builder.append(mOctets.getCanonicalPath());
-            } catch (IOException e) {
-                builder.append("ERROR");
-            }
+            // try {
+                // builder.append(mOctets.getCanonicalPath());
+                builder.append("{");
+                builder.append(mOctets.length());
+                builder.append(" bytes");
+                builder.append("}");
+            // } catch (IOException e) {
+            //     builder.append("ERROR");
+            // }
         } else {
             builder.append("NOT_CACHED");
         }

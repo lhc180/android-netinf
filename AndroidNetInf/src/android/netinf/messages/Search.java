@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 import android.netinf.common.NetInfUtils;
 import android.netinf.node.api.Api;
 
@@ -65,7 +67,7 @@ public class Search extends Request {
 
     @Override
     public String toString() {
-        return Arrays.deepToString(mTokens.toArray());
+        return "{id=" + StringUtils.left(mId, 3) + "…, tokens=" + Arrays.deepToString(mTokens.toArray());
     }
 
 }

@@ -49,6 +49,7 @@ public class SettingsActivity extends Activity {
             // Set default summaries
             Map<String, ?> prefs = PreferenceManager.getDefaultSharedPreferences(getActivity()).getAll();
             for (String key : prefs.keySet()) {
+                updateDependencies(key);
                 updateSummary(key);
             }
 
@@ -81,11 +82,14 @@ public class SettingsActivity extends Activity {
 
             // Bluetooth Routing
             if (key.equals("pref_key_bluetooth_routing")) {
-                if (getPreferenceScreen().getSharedPreferences().getString("pref_key_bluetooth_routing", "").equals("Static")) {
-                    findPreference("pref_key_bluetooth_static_devices").setEnabled(true);
-                } else {
-                    findPreference("pref_key_bluetooth_static_devices").setEnabled(false);
-                }
+                boolean enabled = getPreferenceScreen().getSharedPreferences().getString("pref_key_bluetooth_routing", "").equalsIgnoreCase("Static");
+                findPreference("pref_key_bluetooth_static_devices").setEnabled(enabled);
+            }
+
+            // Http Routing
+            if (key.equals("pref_key_http_routing")) {
+                boolean enabled = getPreferenceScreen().getSharedPreferences().getString("pref_key_http_routing", "").equalsIgnoreCase("Static");
+                findPreference("pref_key_http_static_peers").setEnabled(enabled);
             }
 
         }

@@ -3,7 +3,6 @@ package android.netinf.node.publish;
 import java.util.LinkedList;
 import java.util.List;
 
-import android.netinf.common.NetInfStatus;
 import android.netinf.messages.Publish;
 import android.netinf.messages.PublishResponse;
 import android.netinf.node.api.Api;
@@ -45,14 +44,16 @@ public class PublishController implements PublishService {
 
         // Decide aggregated response status
         for (PublishResponse response : responses) {
-            if (response.getStatus().isSuccess()) {
-                Log.i(TAG, "PUBLISH of " + publish + " done. STATUS " + response.getStatus());
-                return new PublishResponse.Builder(publish).ok().build();
+            if (response.getStatus().isError()) {
+                PublishResponse publishResponse = new PublishResponse.Builder(publish).failed().build();
+                Log.i(TAG, "PUBLISH " + publish + "\n-> " + publishResponse);
+                return publishResponse;
             }
         }
 
-        Log.i(TAG, "PUBLISH of " + publish + " failed. STATUS " + NetInfStatus.FAILED);
-        return new PublishResponse.Builder(publish).failed().build();
+        PublishResponse publishResponse = new PublishResponse.Builder(publish).ok().build();
+        Log.i(TAG, "PUBLISH " + publish + "\n-> " + publishResponse);
+        return publishResponse;
 
     }
 

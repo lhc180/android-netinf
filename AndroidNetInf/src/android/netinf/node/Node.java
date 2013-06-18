@@ -45,7 +45,7 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.SetMultimap;
 
 
@@ -134,24 +134,31 @@ public class Node {
         BluetoothSearch bluetoothSearch     = new BluetoothSearch(bluetoothApi);
 
         // Link Api(s) to PublishService(s)
-        SetMultimap<Api, PublishService> localPublishServices = HashMultimap.create();
+        SetMultimap<Api, PublishService> localPublishServices = LinkedHashMultimap.create();
         localPublishServices.put(Api.JAVA, db);
         localPublishServices.put(bluetoothApi, db);
-        SetMultimap<Api, PublishService> remotePublishServices = HashMultimap.create();
+        SetMultimap<Api, PublishService> remotePublishServices = LinkedHashMultimap.create();
+        remotePublishServices.put(Api.JAVA, httpPublish);
 
         // Link Api(s) to GetService(s)
-        SetMultimap<Api, GetService> localGetServices = HashMultimap.create();
+        SetMultimap<Api, GetService> localGetServices = LinkedHashMultimap.create();
         localGetServices.put(Api.JAVA, db);
         localGetServices.put(bluetoothApi, db);
-        SetMultimap<Api, GetService> remoteGetServices = HashMultimap.create();
+        SetMultimap<Api, GetService> remoteGetServices = LinkedHashMultimap.create();
+        remoteGetServices.put(Api.JAVA, httpGet);
+        remoteGetServices.put(bluetoothApi, httpGet);
         remoteGetServices.put(Api.JAVA, bluetoothGet);
         remoteGetServices.put(bluetoothApi, bluetoothGet);
 
         // Link Api(s) to SearchService(s)
-        SetMultimap<Api, SearchService> localSearchServices = HashMultimap.create();
+        SetMultimap<Api, SearchService> localSearchServices = LinkedHashMultimap.create();
         localSearchServices.put(Api.JAVA, db);
         localSearchServices.put(bluetoothApi, db);
-        SetMultimap<Api, SearchService> remoteSearchServices = HashMultimap.create();
+        SetMultimap<Api, SearchService> remoteSearchServices = LinkedHashMultimap.create();
+        remoteSearchServices.put(Api.JAVA, httpSearch);
+        remoteSearchServices.put(bluetoothApi, httpSearch);
+        remoteSearchServices.put(Api.JAVA, bluetoothSearch);
+        remoteSearchServices.put(bluetoothApi, bluetoothSearch);
 
         // LogService(s)
         List<LogService> logServices = new LinkedList<LogService>();
@@ -193,7 +200,7 @@ public class Node {
     }
 
     public static Future<PublishResponse> submit(final Publish publish) {
-        Log.i(TAG, "PUBLISH submitted for execution: " + publish);
+        Log.i(TAG, "NEW PUBLISH " + publish);
 
         // Wrap the Publish in a Callable
         Callable<PublishResponse> task = new Callable<PublishResponse>() {
@@ -212,7 +219,7 @@ public class Node {
     }
 
     public static Future<SearchResponse> submit(final Search search) {
-        Log.i(TAG, "GET submitted for execution: " + search);
+        Log.i(TAG, "NEW SEARCH " + search);
 
         // Wrap the Search in a Callable
         Callable<SearchResponse> task = new Callable<SearchResponse>() {

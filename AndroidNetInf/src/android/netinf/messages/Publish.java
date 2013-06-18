@@ -1,5 +1,7 @@
 package android.netinf.messages;
 
+import org.apache.commons.lang3.StringUtils;
+
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfUtils;
 import android.netinf.node.api.Api;
@@ -67,12 +69,18 @@ public class Publish extends Request {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append(mNdo.getUri());
+        builder.append("{");
+        builder.append("id=");
+        builder.append(StringUtils.left(mId, 3));
+        builder.append("…");
+        builder.append(", ndo=");
+        builder.append(mNdo);
         if (isFullPut()) {
-            builder.append(" + ");
+            builder.append(", octets=");
             builder.append(mNdo.getOctets().length());
             builder.append(" bytes");
         }
+        builder.append("}");
         return builder.toString();
     }
 

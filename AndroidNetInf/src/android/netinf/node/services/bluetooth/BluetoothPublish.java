@@ -30,7 +30,7 @@ public class BluetoothPublish implements PublishService {
 
     @Override
     public PublishResponse perform(Publish publish) {
-            Log.i(TAG, "Bluetooth CL received PUBLISH: " + publish);
+            Log.i(TAG, "Bluetooth PUBLISH " + publish);
 
             // Create JSON representation of Publish
             JSONObject jo = null;

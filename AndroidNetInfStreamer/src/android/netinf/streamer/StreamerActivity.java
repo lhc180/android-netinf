@@ -95,10 +95,12 @@ public class StreamerActivity extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+
         Log.v(TAG, "onCreateOptionsMenu()");
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.activity_main, menu);
         return true;
+
     }
 
     @Override
@@ -107,10 +109,10 @@ public class StreamerActivity extends Activity {
         // Switch on menu item pressed.
         switch (item.getItemId()) {
             case R.id.menu_record:
-                delayedToggleRecord();
+                delayedToggleRecord(item);
                 return true;
             case R.id.menu_play:
-                togglePlay();
+                togglePlay(item);
                 return true;
             case R.id.menu_clear:
                 clear();
@@ -132,45 +134,53 @@ public class StreamerActivity extends Activity {
         }
     }
 
-    public void togglePlay() {
+    public void togglePlay(MenuItem item) {
         Log.v(TAG, "togglePlay()");
 
         if (mPlayer == null) {
             Log.d(TAG, "Starting playback...");
+            item.setIcon(R.drawable.av_stop);
             mPlayer = new Player(this);
             mPlayerExecutor.execute(mPlayer);
         } else {
             Log.d(TAG, "Stopping playback...");
+            item.setIcon(R.drawable.av_play);
             mPlayer.cancel();
             mPlayer = null;
         }
 
     }
 
-    public void delayedToggleRecord() {
+    public void delayedToggleRecord(final MenuItem item) {
         Log.v(TAG, "delayedToggleRecord()");
         setContentView(R.layout.activity_main);
+        item.setEnabled(false);
         // Ugly fix: a short delay before toggling the camera, otherwise it might not be ready
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                toggleRecord();
+                toggleRecord(item);
             }
         }, 1000);
     }
 
-    public void toggleRecord() {
+    public void toggleRecord(MenuItem item) {
         Log.v(TAG, "toggleRecord()");
         if (mCamera == null) {
             try {
                 startRecording();
+                item.setIcon(R.drawable.av_stop);
             } catch (IOException e) {
                 Log.e(TAG, "startRecording() failed", e);
                 stopRecording();
+                item.setIcon(R.drawable.ic_action_video);
             }
         } else {
             stopRecording();
+            item.setIcon(R.drawable.ic_action_video);
         }
+
+        item.setEnabled(true);
 
     }
 
@@ -199,7 +209,8 @@ public class StreamerActivity extends Activity {
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setPreviewFormat(ImageFormat.YV12);
         //        parameters.setPreviewFormat(ImageFormat.NV21);
-        parameters.setPreviewSize(320, 240);
+        // parameters.setPreviewSize(320, 240);
+        parameters.setPreviewSize(Encoder.WIDTH, Encoder.HEIGHT);
         parameters.setPreviewFpsRange(15000, 15000);
         mCamera.setParameters(parameters);
 

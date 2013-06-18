@@ -48,7 +48,7 @@ public class RestPublishResource extends ServerResource {
 
         // Add Bluetooth
         if (query.containsKey(RestCommon.BLUETOOTH)) {
-            ndoBuilder.locator(Locator.fromBluetooth(query.get(RestCommon.BLUETOOTH)));
+            ndoBuilder.addLocator(Locator.fromBluetooth(query.get(RestCommon.BLUETOOTH)));
         }
 
         // Add Metadata

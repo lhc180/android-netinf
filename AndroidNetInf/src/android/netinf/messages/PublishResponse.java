@@ -1,5 +1,7 @@
 package android.netinf.messages;
 
+import org.apache.commons.lang3.StringUtils;
+
 import android.netinf.common.NetInfStatus;
 
 public class PublishResponse extends Response {
@@ -26,6 +28,11 @@ public class PublishResponse extends Response {
     private PublishResponse(Builder builder) {
         mId = builder.mId;
         mStatus = builder.mStatus;
+    }
+
+    @Override
+    public String toString() {
+        return "{id=" + StringUtils.left(mId, 3) + "…, status=" + mStatus + "}";
     }
 
 }

@@ -133,6 +133,23 @@ public class BluetoothDiscovery implements Runnable {
         }
     };
 
+    public Set<BluetoothDevice> getAllBluetoothDevices() {
+
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>();
+
+        for (SeenDevice seenDevice : mSeenDevices.values()) {
+            devices.add(seenDevice.mDevice);
+        }
+
+        for (BluetoothDevice device : adapter.getBondedDevices()) {
+            devices.add(device);
+        }
+
+        return devices;
+
+    }
+
     public Set<BluetoothDevice> getBluetoothDevices() {
 
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
@@ -162,11 +179,15 @@ public class BluetoothDiscovery implements Runnable {
         } else if (SettingsActivity.getPreference("pref_key_bluetooth_routing").equalsIgnoreCase("Bonded")) {
             builder.append("Routing Bluetooth to bonded devices: [");
             devices.addAll(adapter.getBondedDevices());
-        } else {
+        } else if (SettingsActivity.getPreference("pref_key_bluetooth_routing").equalsIgnoreCase("All")) {
             builder.append("Routing Bluetooth to all discovered devices: [");
             for (SeenDevice seenDevice : mSeenDevices.values()) {
                 devices.add(seenDevice.mDevice);
             }
+        } else {
+            // "None"
+            Log.d(TAG, "Bluetooth routing disabled");
+            return devices;
         }
 
         for (BluetoothDevice device : devices) {

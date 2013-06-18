@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -47,7 +48,26 @@ public class HttpGetService implements GetService {
 
     @Override
     public GetResponse perform(Get get) {
-        Log.i(TAG, "HTTP CL received GET: " + get);
+        return perform(get, HttpCommon.getPeers());
+    }
+
+    @Override
+    public GetResponse resolveLocators(Get get) {
+
+        Set<String> locators = new HashSet<String>();
+        for (Locator locator : get.getNdo().getLocators()) {
+            if (locator.isHttp()) {
+                locators.add(locator.getUri());
+            }
+        }
+
+        String[] peers = new String[locators.size()];
+        return perform(get, locators.toArray(peers));
+
+    }
+
+    private GetResponse perform(Get get, String[] peers) {
+        Log.i(TAG, "HTTP GET " + get);
 
         // HTTP Client
         HttpParams params = new BasicHttpParams();
@@ -56,7 +76,7 @@ public class HttpGetService implements GetService {
         HttpClient client = new DefaultHttpClient(params);
 
         // Repeat GET until ok result
-        for (String peer : HttpCommon.PEERS) {
+        for (String peer : peers) {
             try {
                 HttpResponse response = client.execute(createGet(peer, get));
                 Node.log(LogEntry.newOutgoing("HTTP"), get);
@@ -123,9 +143,9 @@ public class HttpGetService implements GetService {
         // Result NDO
         Ndo.Builder builder = new Ndo.Builder(get.getNdo());
 
-        // Locators (required, locator response without locators not useful)
+        // Locators (required, locator response without locators not useful?)
         try {
-            builder.locators(getLocators(jo));
+            builder.addLocators(getLocators(jo));
         } catch (JSONException e) {
             throw new NetInfException("Failed to parse locators", e);
         }
@@ -137,7 +157,9 @@ public class HttpGetService implements GetService {
             Log.w(TAG, "Failed to parse metadata", e);
         }
 
-        return new GetResponse.Builder(get).ok(get).build();
+        Ndo ndo = builder.build();
+
+        return new GetResponse.Builder(get).ok(ndo).build();
     }
 
     private GetResponse parseBinaryResponse(Get get, HttpResponse response) throws NetInfException {
@@ -203,7 +225,7 @@ public class HttpGetService implements GetService {
 
         JSONObject jo = HttpCommon.parseJson(jsonStream.toString());
         try {
-            builder.locators(getLocators(jo));
+            builder.addLocators(getLocators(jo));
         } catch (JSONException e) {
             Log.w(TAG, "Failed to parse locators", e);
         }
@@ -236,7 +258,7 @@ public class HttpGetService implements GetService {
         }
 
         Ndo ndo = new Ndo.Builder(get.getNdo()).build();
-        return new GetResponse.Builder(get).ok(get).build();
+        return new GetResponse.Builder(get).ok(ndo).build();
 
     }
 

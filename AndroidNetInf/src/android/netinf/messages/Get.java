@@ -4,6 +4,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang3.StringUtils;
+
 import android.netinf.common.Ndo;
 import android.netinf.common.NetInfUtils;
 import android.netinf.node.Node;
@@ -42,6 +44,7 @@ public class Get extends Request {
         public Builder id(String id) { mId = id; return this; }
         public Builder source(Api source) { mSource = source; return this; }
         public Builder hoplimit(int hops) { mHopLimit = hops; return this; }
+        public Builder ndo(Ndo ndo) { mNdo = ndo; return this; }
         public Builder consumeHop() { mHopLimit = Math.max(mHopLimit - 1, 0); return this; }
 
         public Get build() {
@@ -78,7 +81,7 @@ public class Get extends Request {
 
     @Override
     public String toString() {
-        return "{id = " + mId + ", ndo = " + mNdo.getUri() + "}";
+        return "{id=" + StringUtils.left(mId, 3) + "…, ndo=" + mNdo + "}";
     }
 
 }

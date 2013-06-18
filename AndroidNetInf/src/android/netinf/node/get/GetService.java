@@ -6,5 +6,6 @@ import android.netinf.messages.GetResponse;
 public interface GetService {
 
     public GetResponse perform(Get get);
+    public GetResponse resolveLocators(Get get);
 
 }
