@@ -12,7 +12,7 @@ public class Publish extends Request {
 
         private String mId = NetInfUtils.newId();
         private Api mSource;
-        private int mHopLimit = 0;
+        private int mHopLimit = 1;
         private Ndo mNdo;
         private boolean mFullPut = false;
 

@@ -20,9 +20,5 @@
         android:id="@+id/menu_preference"
         android:orderInCategory="1"
         android:title="@string/menu_preference"/>
-    <item
-        android:id="@+id/menu_debug"
-        android:orderInCategory="1"
-        android:title="debug"/>
 
 </menu>

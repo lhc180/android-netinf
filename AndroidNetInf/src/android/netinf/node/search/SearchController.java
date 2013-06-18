@@ -25,27 +25,30 @@ public class SearchController implements SearchService {
     }
 
     @Override
-    public SearchResponse perform(Search incomingSearch) {
+    public SearchResponse perform(Search search) {
 
-        // Reduce hop limit
-        final Search search = new Search.Builder(incomingSearch).consumeHop().build();
+        // Reduce hop limit (unless this was a local request)
+        if (!search.isLocal()) {
+            search = new Search.Builder(search).consumeHop().build();
+        }
+        final Search finalSearch = search;
 
         // Get search services to be used
-        Log.i(TAG, "SEARCH " + search);
-        Set<SearchService> searchServices = new LinkedHashSet<SearchService>(mLocalServices.get(search.getSource()));
-        if (search.getHopLimit() > 0) {
-            searchServices.addAll(mRemoteServices.get(search.getSource()));
+        Log.i(TAG, "SEARCH " + finalSearch);
+        Set<SearchService> searchServices = new LinkedHashSet<SearchService>(mLocalServices.get(finalSearch.getSource()));
+        if (finalSearch.getHopLimit() > 0) {
+            searchServices.addAll(mRemoteServices.get(finalSearch.getSource()));
         }
 
         final CountDownLatch pendingSearches = new CountDownLatch(searchServices.size());
-        final SearchResponse.Builder searchResponseBuilder = new SearchResponse.Builder(search);
+        final SearchResponse.Builder searchResponseBuilder = new SearchResponse.Builder(finalSearch);
 
         for (final SearchService searchService : searchServices) {
             // TODO use an Executor instead
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    SearchResponse response = searchService.perform(search);
+                    SearchResponse response = searchService.perform(finalSearch);
                     searchResponseBuilder.addResults(response.getResults());
                     pendingSearches.countDown();
                 }
@@ -53,13 +56,13 @@ public class SearchController implements SearchService {
         }
 
         try {
-            pendingSearches.await(search.getTimeout(), TimeUnit.MILLISECONDS);
+            pendingSearches.await(finalSearch.getTimeout(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Log.i(TAG, "SEARCH interrupted");
         }
 
         SearchResponse searchResponse = searchResponseBuilder.build();
-        Log.i(TAG, "SEARCH " + search + "\n-> " + searchResponse);
+        Log.i(TAG, "SEARCH " + finalSearch + "\n-> " + searchResponse);
         return searchResponse;
 
     }

@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
+    <PreferenceCategory android:title="Publish after Get" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="pref_key_publish_after_get"
+            android:title="Publish after Get" />
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:dependency="pref_key_publish_after_get"
+            android:key="pref_key_include_bluetooth"
+            android:title="Include Bluetooth locator" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:dependency="pref_key_publish_after_get"
+            android:key="pref_key_include_octets"
+            android:title="Include octets" />
+    </PreferenceCategory>
     <PreferenceCategory android:title="HTTP" >
         <ListPreference
             android:defaultValue="Static"
@@ -9,6 +25,7 @@
             android:entryValues="@array/http_routing_alternatives"
             android:key="pref_key_http_routing"
             android:title="Routing" />
+
         <EditTextPreference
             android:defaultValue="213.159.185.166:8080"
             android:key="pref_key_http_static_peers"

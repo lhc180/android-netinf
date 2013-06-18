@@ -23,10 +23,12 @@ public class PublishController implements PublishService {
     }
 
     @Override
-    public PublishResponse perform(Publish incomingPublish) {
+    public PublishResponse perform(Publish publish) {
 
-        // Reduce hop limit
-        Publish publish = new Publish.Builder(incomingPublish).consumeHop().build();
+        // Reduce hop limit (unless this was a local request)
+        if (!publish.isLocal()) {
+            publish = new Publish.Builder(publish).consumeHop().build();
+        }
 
         List<PublishResponse> responses = new LinkedList<PublishResponse>();
 

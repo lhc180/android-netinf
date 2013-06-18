@@ -12,7 +12,9 @@ import android.netinf.common.Locator;
 import android.netinf.common.Ndo;
 import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
+import android.netinf.messages.Publish;
 import android.netinf.node.Node;
+import android.netinf.node.SettingsActivity;
 import android.netinf.node.api.Api;
 import android.netinf.node.logging.LogEntry;
 import android.util.Log;
@@ -75,6 +77,9 @@ public class GetController {
     private void handle(Get get) {
 
         GetResponse getResponse = perform(get);
+
+        // Publish
+        publish(getResponse);
 
         // Get aggregated requests
         Set<Get> gets = mRequestAggregator.deaggregate(get);
@@ -149,6 +154,7 @@ public class GetController {
                         return getResponse;
                     } else if (get.isLocal()) {
                         // We might have gotten locators
+                        next.addAll(getResponse.getNdo().getLocators());
                         getResponse = resolveLocators(get, resolved, next);
                         if (getResponse.getStatus().isSuccess() && getResponse.getNdo().isCached()) {
                             return getResponse;
@@ -197,6 +203,27 @@ public class GetController {
         }
 
         return getResponse;
+
+    }
+
+    private void publish(GetResponse getResponse) {
+
+        if (getResponse.getStatus().isError() || !SettingsActivity.getPreferenceAsBoolean("pref_key_publish_after_get")) {
+            return;
+        }
+
+        Ndo ndo = getResponse.getNdo();
+        if (SettingsActivity.getPreferenceAsBoolean("pref_key_include_bluetooth")) {
+            ndo = new Ndo.Builder(ndo).addLocator(Locator.fromBluetooth()).build();
+        }
+
+        Publish.Builder publishBuilder = new Publish.Builder(ndo);
+        if (SettingsActivity.getPreferenceAsBoolean("pref_key_include_octets")) {
+            publishBuilder.fullPut();
+        }
+        Publish publish = publishBuilder.build();
+
+        Node.submit(publish);
 
     }
 

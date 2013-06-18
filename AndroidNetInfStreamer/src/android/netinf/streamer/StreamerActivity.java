@@ -59,6 +59,7 @@ public class StreamerActivity extends Activity {
 
         // Start the NetInf library
         Node.start(getApplicationContext());
+        clear();
 
         setContentView(R.layout.activity_main);
 
@@ -120,15 +121,15 @@ public class StreamerActivity extends Activity {
             case R.id.menu_preference:
                 Node.showPreferences(this);
                 return true;
-            case R.id.menu_debug:
-                // TODO remove debug
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        debug();
-                    }
-                }).start();
-                return true;
+//            case R.id.menu_debug:
+//                // TODO remove debug
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        debug();
+//                    }
+//                }).start();
+//                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }

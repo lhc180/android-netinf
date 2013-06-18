@@ -45,8 +45,8 @@ public class Encoder implements Runnable {
     public static final int BUFFER_SIZE = 115200; // From mCodec's buffer size
     public static final int MIN_CHUNK_SIZE = 1;//50 * 1024; // Min bytes per chunk, can only split on IDR-frames
 
-    public static final int WIDTH = 352;//320;//640;
-    public static final int HEIGHT = 288;//240;//480:
+    public static final int WIDTH = 320;//352;//320;//640;
+    public static final int HEIGHT = 240;//288;//240;//480:
 
     /** MediaCodec that encodes the frames into a h264 byte stream. */
     private MediaCodec mCodec;

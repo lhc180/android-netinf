@@ -1,7 +1,10 @@
 package android.netinf.node.services.bluetooth;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -48,6 +51,8 @@ public class BluetoothGet implements GetService {
             }
         }
 
+        Log.d(TAG, "Bluetooth locators resulted in: " + devices);
+
         return perform(get, devices);
 
     }
@@ -71,7 +76,9 @@ public class BluetoothGet implements GetService {
 
         // Get from all relevant devices
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        for (BluetoothDevice device : devices) {
+        List<BluetoothDevice> random = new ArrayList<BluetoothDevice>(devices);
+        Collections.shuffle(random);
+        for (BluetoothDevice device : random) {
 
             try {
 

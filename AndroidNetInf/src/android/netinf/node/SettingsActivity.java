@@ -14,6 +14,13 @@ public class SettingsActivity extends Activity {
 
     public static final String TAG = SettingsActivity.class.getSimpleName();
 
+    public static boolean getPreferenceAsBoolean(String key) {
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(Node.getContext());
+        return prefs.getBoolean(key, false);
+
+    }
+
     public static int getPreferenceAsInt(String key) {
         return Integer.valueOf(getPreference(key));
     }
@@ -74,8 +81,13 @@ public class SettingsActivity extends Activity {
         }
 
         private void updateSummary(String key) {
-            String value = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(key, "?");
-            findPreference(key).setSummary(value);
+
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            Map<String, ?> entries = prefs.getAll();
+
+            if (entries.get(key) instanceof String) {
+                findPreference(key).setSummary(entries.get(key).toString());
+            }
         }
 
         private void updateDependencies(String key) {
