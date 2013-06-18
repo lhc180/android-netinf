@@ -48,9 +48,35 @@ public class Locator implements Serializable {
         return fromBluetooth(mac);
     }
 
+    public String getUri() {
+        return mLocator;
+    }
+
+    public boolean isBluetooth() {
+        return mLocator.startsWith(BLUETOOTH);
+    }
+
+    public boolean isHttp() {
+        return mLocator.startsWith(HTTP);
+    }
+
     @Override
     public String toString() {
         return mLocator;
+    }
+
+    @Override
+    public int hashCode() {
+        return mLocator.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null) return false;
+        if (getClass() != obj.getClass()) return false;
+        Locator other = (Locator) obj;
+        return mLocator.equals(other.mLocator);
     }
 
 }

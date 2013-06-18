@@ -95,7 +95,7 @@ public class NetInfUtils {
             JSONArray locators = jo.getJSONArray("locators");
             for (int i = 0; i < locators.length(); i++) {
                 try {
-                    builder.locator(Locator.fromString(locators.getString(i)));
+                    builder.addLocator(Locator.fromString(locators.getString(i)));
                 } catch (JSONException e) {
                     Log.w(TAG, "Skipped invalid locator", e);
                 }

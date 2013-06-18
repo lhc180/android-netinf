@@ -348,7 +348,7 @@ public class BluetoothSocketHandler implements Runnable {
             if (jo.has("locators")){
                 JSONArray locators = jo.getJSONArray("locators");
                 for (int i = 0; i < locators.length(); i++) {
-                    builder.locator(Locator.fromString(locators.getString(i)));
+                    builder.addLocator(Locator.fromString(locators.getString(i)));
                 }
             }
 

@@ -15,4 +15,8 @@ public abstract class Request extends Message {
         return mHopLimit;
     }
 
+    public boolean isLocal() {
+        return mSource.equals(Api.JAVA);
+    }
+
 }

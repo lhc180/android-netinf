@@ -42,8 +42,9 @@ public class Ndo implements Serializable {
         }
 
         public Builder authority(String authority) { mAuthority = authority; return this; }
-        public Builder locator(Locator locator) { mLocators.add(locator); return this; }
-        public Builder locators(Set<Locator> locators) { mLocators.addAll(locators); return this; }
+        public Builder addLocator(Locator locator) { mLocators.add(locator); return this; }
+        public Builder addLocators(Set<Locator> locators) { mLocators.addAll(locators); return this; }
+        public Builder setLocators(Set<Locator> locators) { mLocators.clear(); mLocators.addAll(locators); return this; }
         public Builder metadata(Metadata metadata) { mMetadata = metadata; return this; }
         public Builder timestamp(long timestamp) { mTimestamp = timestamp; return this; }
 
@@ -184,7 +185,7 @@ public class Ndo implements Serializable {
     }
 
     public Set<Locator> getLocators() {
-        return mLocators;
+        return new HashSet<Locator>(mLocators);
     }
 
     public Metadata getMetadata() {

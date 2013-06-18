@@ -133,6 +133,23 @@ public class BluetoothDiscovery implements Runnable {
         }
     };
 
+    public Set<BluetoothDevice> getAllBluetoothDevices() {
+
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>();
+
+        for (SeenDevice seenDevice : mSeenDevices.values()) {
+            devices.add(seenDevice.mDevice);
+        }
+
+        for (BluetoothDevice device : adapter.getBondedDevices()) {
+            devices.add(device);
+        }
+
+        return devices;
+
+    }
+
     public Set<BluetoothDevice> getBluetoothDevices() {
 
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
@@ -168,6 +185,7 @@ public class BluetoothDiscovery implements Runnable {
                 devices.add(seenDevice.mDevice);
             }
         } else {
+            builder.append("NOT Routing Bluetooth to any devices: [");
             // "None"
         }
 

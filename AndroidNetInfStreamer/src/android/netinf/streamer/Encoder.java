@@ -45,6 +45,9 @@ public class Encoder implements Runnable {
     public static final int BUFFER_SIZE = 115200; // From mCodec's buffer size
     public static final int MIN_CHUNK_SIZE = 1;//50 * 1024; // Min bytes per chunk, can only split on IDR-frames
 
+    public static final int WIDTH = 352;//320;//640;
+    public static final int HEIGHT = 288;//240;//480:
+
     /** MediaCodec that encodes the frames into a h264 byte stream. */
     private MediaCodec mCodec;
     /** Buffer keeping track of uncoded frames, it should not grow if things are fast enough. */
@@ -62,7 +65,7 @@ public class Encoder implements Runnable {
     /** Publisher to call when chunk done. */
     private Publisher mPublisher;
     /** How often to duplicate frames to go from 15 -> 25 fps. */
-    // inc and mod 3, 0 indicates frame should not be duplicated, 3 frames becomes 5
+    // 0, 1, 2, 0, 1, 2... 0 indicates frame should not be duplicated, 3 frames becomes 5
     private int mDuplicate = 0;
 
     public Encoder() {
@@ -83,7 +86,7 @@ public class Encoder implements Runnable {
         mFrameFifo = BufferUtils.blockingBuffer(new UnboundedFifoBuffer());
 
         mCodec = MediaCodec.createByCodecName("OMX.TI.DUCATI1.VIDEO.H264E");
-        MediaFormat mediaFormat = MediaFormat.createVideoFormat("video/avc", 320, 240);
+        MediaFormat mediaFormat = MediaFormat.createVideoFormat("video/avc", WIDTH, HEIGHT);
         mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, 125000);
         // FRAME_RATE is in reality 30, 15 tricks the encoder to insert more IDR-frames, for smaller min chunks
         // I_FRAME_INTERVAL is 1/s but since FRAME_RATE is wrong we get double the amount, 2/s
@@ -124,7 +127,7 @@ public class Encoder implements Runnable {
     public void queueForEncoding(byte[] frame) {
         // Log.v(TAG, "queueForEncoding()");
         // Fake 30 fps by encoding every frame twice
-        frame = YV12toYUV420PackedSemiPlanar(frame, 320, 240);
+        frame = YV12toYUV420PackedSemiPlanar(frame, Encoder.WIDTH, Encoder.HEIGHT);
         mFrameFifo.add(frame);
         if (mDuplicate != 0) {
             mFrameFifo.add(frame);

@@ -199,7 +199,8 @@ public class StreamerActivity extends Activity {
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setPreviewFormat(ImageFormat.YV12);
         //        parameters.setPreviewFormat(ImageFormat.NV21);
-        parameters.setPreviewSize(320, 240);
+        // parameters.setPreviewSize(320, 240);
+        parameters.setPreviewSize(Encoder.WIDTH, Encoder.HEIGHT);
         parameters.setPreviewFpsRange(15000, 15000);
         mCamera.setParameters(parameters);
 

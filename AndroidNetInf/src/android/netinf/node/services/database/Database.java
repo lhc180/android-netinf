@@ -79,6 +79,12 @@ public class Database extends SQLiteOpenHelper implements PublishService, GetSer
     }
 
     @Override
+    public GetResponse resolveLocators(Get get) {
+        // Not needed
+        return new GetResponse.Builder(get).failed().build();
+    }
+
+    @Override
     public synchronized SearchResponse perform(Search search) {
         Log.i(TAG, "Database SEARCH " + search);
         String[] columns = {COLUMN_NDO};

@@ -1,6 +1,7 @@
 package android.netinf.node.services.bluetooth;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -11,6 +12,7 @@ import org.json.JSONObject;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.netinf.common.Locator;
 import android.netinf.messages.Get;
 import android.netinf.messages.GetResponse;
 import android.netinf.node.Node;
@@ -30,6 +32,27 @@ public class BluetoothGet implements GetService {
 
     @Override
     public GetResponse perform(Get get) {
+        return perform(get, mApi.getBluetoothDevices());
+    }
+
+    @Override
+    public GetResponse resolveLocators(Get get) {
+
+        Set<BluetoothDevice> devices = new HashSet<BluetoothDevice>();
+        for (Locator locator : get.getNdo().getLocators()) {
+            for (BluetoothDevice device : mApi.getAllBluetoothDevices()) {
+                if (locator.getUri().contains(device.getAddress())) {
+                    devices.add(device);
+                    break;
+                }
+            }
+        }
+
+        return perform(get, devices);
+
+    }
+
+    private GetResponse perform(Get get, Set<BluetoothDevice> devices) {
         Log.i(TAG, "Bluetooth GET " + get);
 
         // Check if Bluetooth is available, could be restarting
@@ -48,7 +71,6 @@ public class BluetoothGet implements GetService {
 
         // Get from all relevant devices
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        Set<BluetoothDevice> devices = mApi.getBluetoothDevices();
         for (BluetoothDevice device : devices) {
 
             try {

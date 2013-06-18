@@ -44,14 +44,14 @@ public class PublishController implements PublishService {
 
         // Decide aggregated response status
         for (PublishResponse response : responses) {
-            if (response.getStatus().isSuccess()) {
-                PublishResponse publishResponse = new PublishResponse.Builder(publish).ok().build();
+            if (response.getStatus().isError()) {
+                PublishResponse publishResponse = new PublishResponse.Builder(publish).failed().build();
                 Log.i(TAG, "PUBLISH " + publish + "\n-> " + publishResponse);
                 return publishResponse;
             }
         }
 
-        PublishResponse publishResponse = new PublishResponse.Builder(publish).failed().build();
+        PublishResponse publishResponse = new PublishResponse.Builder(publish).ok().build();
         Log.i(TAG, "PUBLISH " + publish + "\n-> " + publishResponse);
         return publishResponse;
 

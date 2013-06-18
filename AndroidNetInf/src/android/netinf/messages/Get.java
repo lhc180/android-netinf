@@ -44,6 +44,7 @@ public class Get extends Request {
         public Builder id(String id) { mId = id; return this; }
         public Builder source(Api source) { mSource = source; return this; }
         public Builder hoplimit(int hops) { mHopLimit = hops; return this; }
+        public Builder ndo(Ndo ndo) { mNdo = ndo; return this; }
         public Builder consumeHop() { mHopLimit = Math.max(mHopLimit - 1, 0); return this; }
 
         public Get build() {

@@ -7,7 +7,7 @@ public class EncodingPreviewCallback implements Camera.PreviewCallback {
     public static final String TAG = EncodingPreviewCallback.class.getSimpleName();
 
     public static final int BUFFER_NUM = 20;
-    public static final int BUFFER_SIZE = 115200; // From encoders buffer size, depends on the video res 320x240 = 115200
+    public static final int BUFFER_SIZE = 3*(Encoder.WIDTH * Encoder.HEIGHT)/2; //115200; // From encoders buffer size, depends on the video res 1.5*320*240 = 115200
 
     /** Encoder to use for each frame received in onPreviewFrame(). */
     private Encoder mEncoder;

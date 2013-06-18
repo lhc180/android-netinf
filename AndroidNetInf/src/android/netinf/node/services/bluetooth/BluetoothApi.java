@@ -30,6 +30,10 @@ public class BluetoothApi implements Api {
         return mBluetoothDiscovery.getBluetoothDevices();
     }
 
+    public Set<BluetoothDevice> getAllBluetoothDevices() {
+        return mBluetoothDiscovery.getAllBluetoothDevices();
+    }
+
     public BluetoothSocketManager getManager() {
         return mManager;
     }
