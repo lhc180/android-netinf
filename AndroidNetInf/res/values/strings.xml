@@ -26,4 +26,9 @@
         <item>All</item>
     </string-array>
     
+    <string-array name="http_routing_alternatives">
+        <item>None</item>
+        <item>Static</item>
+    </string-array>
+    
 </resources>

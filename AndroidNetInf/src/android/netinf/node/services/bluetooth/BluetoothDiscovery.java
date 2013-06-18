@@ -185,8 +185,9 @@ public class BluetoothDiscovery implements Runnable {
                 devices.add(seenDevice.mDevice);
             }
         } else {
-            builder.append("NOT Routing Bluetooth to any devices: [");
             // "None"
+            Log.d(TAG, "Bluetooth routing disabled");
+            return devices;
         }
 
         for (BluetoothDevice device : devices) {

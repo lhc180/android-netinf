@@ -92,7 +92,7 @@ public class Player implements Runnable {
     }
 
     private GetResponse getUntilSuccess(Get get, int attempts) throws IOException {
-        while (attempts > 0) {
+        while (attempts > 0 && mRunning) {
             try {
 //                GetResponse response = Node.submit(get).get(TIMEOUT, TimeUnit.MILLISECONDS);
                 GetResponse response = Node.submit(get).get();
@@ -105,7 +105,7 @@ public class Player implements Runnable {
                 Log.w(TAG, "GET failed", e);
             }
             try {
-                Thread.currentThread().sleep(SLEEP);
+                Thread.sleep(SLEEP);
             } catch (InterruptedException e) {
                 Log.wtf(TAG, "Sleep interrupted", e);
             }

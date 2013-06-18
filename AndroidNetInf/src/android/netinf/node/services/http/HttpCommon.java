@@ -33,12 +33,19 @@ public class HttpCommon {
     }
 
     public static String[] getPeers() {
-        String[] peers = SettingsActivity.getPreference("pref_key_http_static_peers").split(" ");
-        for (int i = 0; i < peers.length; i++) {
-            peers[i] = "http://" + peers[i].trim();
+        if (SettingsActivity.getPreference("pref_key_http_routing").equalsIgnoreCase("Static")) {
+            // Static routing
+            String[] peers = SettingsActivity.getPreference("pref_key_http_static_peers").split(" ");
+            for (int i = 0; i < peers.length; i++) {
+                peers[i] = "http://" + peers[i].trim();
+            }
+            Log.d(TAG, "Routing HTTP to static peers: " + Arrays.toString(peers));
+            return peers;
+        } else {
+            // No routing
+            Log.d(TAG, "HTTP routing disabled");
+            return new String[0];
         }
-        Log.d(TAG, "Routing HTTP to static peers: " + Arrays.toString(peers));
-        return peers;
     }
 
     public static String getContentType(HttpResponse response) throws NetInfException {
